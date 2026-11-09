@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 const core = createRequire(import.meta.url)("../src/core.js");
 
-const NOW = new Date(2026, 10, 9, 18, 0); // Sun 9 Nov 2026, local time
+const NOW = new Date(2026, 10, 9, 18, 0); // Mon 9 Nov 2026 (ISO week 46), local time
 const day = (y, m, d) => new Date(y, m - 1, d, 12).getTime();
 const note = (path, fm = {}, body = "", ctime = day(2026, 11, 1), mtime = ctime) => {
   const file = path.split("/").pop().replace(/\.md$/, "");
@@ -11,8 +11,8 @@ const note = (path, fm = {}, body = "", ctime = day(2026, 11, 1), mtime = ctime)
   return { path, name: file, folder, fm, body, ctime, mtime };
 };
 
-test("isoWeek: 9 Nov 2026 is week 45, 1 Jan 2026 is week 1", () => {
-  assert.deepEqual(core.isoWeek(NOW), { year: 2026, week: 45 });
+test("isoWeek: 9 Nov 2026 is week 46, 1 Jan 2026 is week 1", () => {
+  assert.deepEqual(core.isoWeek(NOW), { year: 2026, week: 46 });
   assert.deepEqual(core.isoWeek(new Date(2026, 0, 1)), { year: 2026, week: 1 });
   assert.deepEqual(core.isoWeek(new Date(2027, 0, 1)), { year: 2026, week: 53 });
 });
@@ -22,9 +22,9 @@ test("dayKey uses local YYYY-MM-DD", () => {
 });
 
 test("header: week kicker and long date", () => {
-  assert.deepEqual(core.header(NOW, 3), { kicker: "Week 45 · 3 things to sort", title: "Sunday, 9 November" });
-  assert.equal(core.header(NOW, 1).kicker, "Week 45 · 1 thing to sort");
-  assert.equal(core.header(NOW, 0).kicker, "Week 45 · inbox clear");
+  assert.deepEqual(core.header(NOW, 3), { kicker: "Week 46 · 3 things to sort", title: "Monday, 9 November" });
+  assert.equal(core.header(NOW, 1).kicker, "Week 46 · 1 thing to sort");
+  assert.equal(core.header(NOW, 0).kicker, "Week 46 · inbox clear");
 });
 
 test("links in properties are normalised", () => {
@@ -75,10 +75,10 @@ test("weekTodos reads the to-do section of a review", () => {
 });
 
 test("currentReview: the weekly review created this ISO week", () => {
-  const old = note("2026-11-01 Weekly Review.md", { categories: ["[[Reviews]]"], period: "week", created: "2026-11-01" });
-  const cur = note("2026-11-03 Weekly Review.md", { categories: ["[[Reviews]]"], period: "week", created: "2026-11-03" });
-  const month = note("2026-11-05 Monthly Review.md", { categories: ["[[Reviews]]"], period: "month", created: "2026-11-05" });
-  assert.equal(core.currentReview([old, cur, month], NOW).name, "2026-11-03 Weekly Review");
+  const old = note("2026-11-08 Weekly Review.md", { categories: ["[[Reviews]]"], period: "week", created: "2026-11-08" });
+  const cur = note("2026-11-09 Weekly Review.md", { categories: ["[[Reviews]]"], period: "week", created: "2026-11-09" });
+  const month = note("2026-11-09 Monthly Review.md", { categories: ["[[Reviews]]"], period: "month", created: "2026-11-09" });
+  assert.equal(core.currentReview([old, cur, month], NOW).name, "2026-11-09 Weekly Review");
   assert.equal(core.currentReview([old], NOW), null);
 });
 
@@ -88,8 +88,8 @@ test("rhythm: words and captures today, tasks this week, goals touched", () => {
     note("Daily/2026-11-09.md", { categories: ["[[Daily]]"], created: "2026-11-09" }, "one two three", today),
     note("2026-11-09 1000 idea.md", { categories: ["[[Journal]]"] }, "four five", today),
     note("old.md", { categories: ["[[Journal]]"], created: "2026-11-01" }, "many words here", day(2026, 11, 1), today),
-    note("Goal A.md", { categories: ["[[Goals]]"], status: "active" }, "", day(2026, 10, 1), day(2026, 11, 7)),
-    note("Goal B.md", { categories: ["[[Goals]]"] }, "", day(2026, 10, 1), day(2026, 10, 2)),
+    note("Goal A.md", { categories: ["[[Goals]]"], status: "active" }, "", day(2026, 10, 1), day(2026, 11, 9)),
+    note("Goal B.md", { categories: ["[[Goals]]"] }, "", day(2026, 10, 1), day(2026, 11, 8)),
     note("Done P.md", { categories: ["[[Projects]]"], status: "done" }, "", day(2026, 10, 1), today),
   ];
   const review = { body: "## This week's to-dos\n- [x] a\n- [ ] b\n- [x] c" };

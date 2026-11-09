@@ -16,9 +16,9 @@ export const notes = [
   n("2026-11-09 1130 endgame patience.md", { categories: ["[[Journal]]"], created: "2026-11-09" }, "Endgames reward patience more than tricks.", d(2026, 11, 9, 11)),
   n("2026-10-20 2210 app idea.md", { categories: ["[[Journal]]"], created: "2026-10-20" }, "A tiny app that tracks kata practice streaks.", d(2026, 10, 20, 22)),
   n("Chess goals.md", { categories: ["[[Goals]]"], topics: ["[[Chess]]"], status: "active" }, "## Next step\n- [ ] Review the endgame blunder from Sunday's game\n", d(2026, 9, 23), d(2026, 11, 9)),
-  n("Black belt grading.md", { categories: ["[[Goals]]"], topics: ["[[Karate]]"], status: "active" }, "## Next step\n- [ ] Run the full kata sequence twice, slowly\n", d(2026, 9, 26), d(2026, 11, 6)),
+  n("Black belt grading.md", { categories: ["[[Goals]]"], topics: ["[[Karate]]"], status: "active" }, "## Next step\n- [ ] Run the full kata sequence twice, slowly\n", d(2026, 9, 26), d(2026, 11, 9, 10)),
   n("Portfolio site.md", { categories: ["[[Projects]]"], topics: ["[[Tech]]"], status: "active" }, "- [x] Pick a font\n- [ ] Write the about section in three sentences\n", d(2026, 10, 6), d(2026, 10, 30)),
   n("Painting practice.md", { categories: ["[[Goals]]"], topics: ["[[Art]]"], status: "active" }, "## Next step\n- [ ] Paint one value study a day for a week\n", d(2026, 9, 23), d(2026, 10, 1)),
   n("2026-05-03 Letter to future me.md", { categories: ["[[Letters]]"], created: "2026-05-03", deliver: "2026-11-09" }, "Dear future me. By now the exams are over and the grading is close. I hope you still do kata before breakfast, and that you finally finished one painting you are proud of. Be kind about the chess rating.", d(2026, 5, 3)),
-  n("2026-11-03 Weekly Review.md", { categories: ["[[Reviews]]"], period: "week", created: "2026-11-03" }, "## Wins\n\n## This week's to-dos\n- [x] Finish the maths revision sheet\n- [x] Two rapid games a day\n- [ ] Book the grading slot\n- [ ] Clean up the art folder\n", d(2026, 11, 3)),
+  n("2026-11-09 Weekly Review.md", { categories: ["[[Reviews]]"], period: "week", created: "2026-11-09" }, "## Wins\n\n## This week's to-dos\n- [x] Finish the maths revision sheet\n- [x] Two rapid games a day\n- [ ] Book the grading slot\n- [ ] Clean up the art folder\n", d(2026, 11, 9, 9)),
 ];
