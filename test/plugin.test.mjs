@@ -71,7 +71,7 @@ async function setup(files) {
   const block = { draw: () => { block.drawn = (block.drawn || 0) + 1; } };
   return { app, p, a: p.actions(block), block };
 }
-const at = () => mock.timers.enable({ apis: ["Date"], now: new Date(2026, 10, 9, 18, 5).getTime() });
+const at = () => { mock.timers.reset(); mock.timers.enable({ apis: ["Date"], now: new Date(2026, 10, 9, 18, 5).getTime() }); };
 
 test("onload registers the code block and commands", async () => {
   const { p } = await setup({});
@@ -83,7 +83,7 @@ test("capture: a thought becomes a timestamped journal note in the root", async 
   at();
   const { app, a } = await setup({});
   await a.capture("Shadows are never grey, mix the complement");
-  const path = "2026-11-09 1805 Shadows are never grey.md";
+  const path = "2026-11-09 1805 Shadows are never grey mix.md"; // title = first five words
   assert.ok(app.store.has(path), [...app.store.keys()].join("\n"));
   const c = app.store.get(path).content;
   assert.match(c, /categories:\n  - "\[\[Journal\]\]"/);
