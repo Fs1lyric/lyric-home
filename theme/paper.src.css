@@ -1,0 +1,109 @@
+/* Paper: the Lyric Home look for all of Obsidian. Warm paper, ink text, serif headings, quiet chrome.
+   Built into paper.css (fonts inlined). Enable in Settings → Appearance → CSS snippets. */
+@font-face { font-family: "LH Newsreader"; src: url("../fonts/newsreader-latin-wght-normal.woff2") format("woff2"); font-weight: 200 800; font-style: normal; }
+@font-face { font-family: "LH Newsreader"; src: url("../fonts/newsreader-latin-wght-italic.woff2") format("woff2"); font-weight: 200 800; font-style: italic; }
+@font-face { font-family: "LH Inter"; src: url("../fonts/inter-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-style: normal; }
+
+body {
+  --font-text-theme: "LH Inter", Inter, system-ui, sans-serif;
+  --font-interface-theme: "LH Inter", Inter, system-ui, sans-serif;
+  --font-monospace-theme: "JetBrains Mono", ui-monospace, monospace;
+  --lh-serif: "LH Newsreader", "Noto Serif", Georgia, serif;
+  --font-text-size: 16px;
+  --line-height-normal: 1.6;
+  --radius-s: 6px; --radius-m: 10px; --radius-l: 12px;
+  --h1-font: var(--lh-serif); --h2-font: var(--lh-serif); --h3-font: var(--lh-serif);
+  --inline-title-font: var(--lh-serif);
+  --h1-size: 2.1em; --h2-size: 1.55em; --h3-size: 1.25em; --h4-size: 1.05em;
+  --h1-weight: 450; --h2-weight: 500; --h3-weight: 550; --h4-weight: 650;
+  --inline-title-size: 2.4em; --inline-title-weight: 450;
+  --file-line-width: 720px;
+}
+.theme-light {
+  --color-base-00: #fbfaf6; --color-base-05: #f7f5ef; --color-base-10: #f3f1ea; --color-base-20: #efece3;
+  --color-base-25: #e7e3d9; --color-base-30: #ddd8cc; --color-base-35: #cbc5b7; --color-base-40: #b3ac9d;
+  --color-base-50: #8a8478; --color-base-60: #6d685e; --color-base-70: #4a463e; --color-base-100: #1d1b17;
+  --color-accent: #1f1e1b; --color-accent-1: #3a3833; --color-accent-2: #000;
+  --background-primary: #fbfaf6; --background-primary-alt: #f6f3ea; --background-secondary: #f3f1ea; --background-secondary-alt: #ece8de;
+  --background-modifier-border: #e7e3d9; --background-modifier-hover: rgba(60, 50, 20, .06);
+  --text-normal: #1d1b17; --text-muted: #6d685e; --text-faint: #a39d90;
+  --text-accent: #8a6a22; --text-accent-hover: #6e5418;
+  --link-color: #1d1b17; --link-color-hover: #8a6a22; --link-decoration: underline; --link-decoration-thickness: 1px;
+  --link-unresolved-color: #8a8478; --link-unresolved-opacity: 1; --link-unresolved-decoration-color: #d6cfbf;
+  --interactive-accent: #1f1e1b; --interactive-accent-hover: #3a3833; --text-on-accent: #fbfaf6;
+  --text-selection: rgba(176, 125, 31, .18); --text-highlight-bg: rgba(240, 214, 140, .55);
+  --blockquote-border-color: #1d1b17; --hr-color: #e7e3d9;
+  --tag-color: #8a6a22; --tag-background: #f4ecd6; --tag-border-width: 0;
+  --checkbox-color: #3d8a56; --checkbox-border-color: #b3ac9d;
+  --code-background: #f3f1ea;
+  --titlebar-background: #f3f1ea; --titlebar-background-focused: #f3f1ea; --tab-container-background: #f3f1ea;
+  --ribbon-background: #f3f1ea; --ribbon-background-collapsed: #fbfaf6;
+}
+.theme-dark {
+  --color-base-00: #191816; --color-base-05: #1c1b18; --color-base-10: #201f1c; --color-base-20: #24221f;
+  --color-base-25: #2b2925; --color-base-30: #34322d; --color-base-35: #3e3b35; --color-base-40: #555148;
+  --color-base-50: #7a7468; --color-base-60: #9a9385; --color-base-70: #cfc9bc; --color-base-100: #f1ede4;
+  --color-accent: #f1ede4; --color-accent-1: #d8d2c4; --color-accent-2: #fff;
+  --background-primary: #191816; --background-primary-alt: #1d1c19; --background-secondary: #201f1c; --background-secondary-alt: #24221f;
+  --background-modifier-border: #34322d;
+  --text-normal: #f1ede4; --text-muted: #9a9385; --text-faint: #6d685e;
+  --text-accent: #d8b46a; --text-accent-hover: #e8c780;
+  --link-color: #f1ede4; --link-color-hover: #d8b46a; --link-decoration: underline;
+  --link-unresolved-color: #9a9385; --link-unresolved-opacity: 1; --link-unresolved-decoration-color: #4a4231;
+  --interactive-accent: #f1ede4; --interactive-accent-hover: #d8d2c4; --text-on-accent: #191816;
+  --text-selection: rgba(216, 180, 106, .22); --blockquote-border-color: #f1ede4;
+  --tag-color: #d8b46a; --tag-background: #2a261c; --tag-border-width: 0;
+  --checkbox-color: #87c99b;
+}
+
+/* type */
+.markdown-rendered h1, .markdown-rendered h2, .markdown-rendered h3,
+.HyperMD-header-1, .HyperMD-header-2, .HyperMD-header-3, .inline-title { font-family: var(--lh-serif) !important; letter-spacing: -.01em; color: var(--text-normal) !important; }
+.markdown-rendered blockquote, .markdown-source-view .HyperMD-quote { font-family: var(--lh-serif); font-style: italic; font-size: 1.08em; }
+.markdown-rendered blockquote { border-left-width: 2px; padding-left: 1em; }
+a.internal-link, .cm-hmd-internal-link .cm-underline { text-underline-offset: 3px; text-decoration-color: var(--background-modifier-border) !important; }
+a.internal-link:hover { text-decoration-color: currentColor !important; }
+
+/* callouts become soft cards */
+.callout { border-radius: var(--radius-l); border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: 0 1px 2px rgba(40, 32, 10, .04); }
+.callout-title { font-weight: 650; }
+
+/* quieter chrome */
+.workspace-ribbon.side-dock-ribbon { border-right: 0; }
+.workspace-tab-header-container { border-bottom: 1px solid var(--background-modifier-border); }
+.nav-file-title, .nav-folder-title { border-radius: 6px; }
+.nav-folder-title-content { font-weight: 550; }
+.status-bar { background: transparent; border: 0; color: var(--text-faint); }
+.view-header-title { font-family: var(--lh-serif); font-size: 1.05em; }
+button.mod-cta { border-radius: 7px; font-weight: 600; }
+
+/* properties: muted, small */
+.metadata-container { --metadata-label-text-color: var(--text-faint); --metadata-property-radius: 6px; font-size: .9em; }
+
+/* folder icons, line style (no plugin needed) */
+.nav-folder-title[data-path] .nav-folder-title-content::before {
+  content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 7px; vertical-align: -2px;
+  background: currentColor; opacity: .55;
+  -webkit-mask: var(--lh-ic) center / contain no-repeat; mask: var(--lh-ic) center / contain no-repeat;
+  --lh-ic: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>');
+}
+.nav-folder-title[data-path="Daily"] .nav-folder-title-content::before { --lh-ic: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>'); }
+.nav-folder-title[data-path="References"] .nav-folder-title-content::before { --lh-ic: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v16H8a2 2 0 0 1-2-2z"/><path d="M6 19a2 2 0 0 1 2-2h11"/></svg>'); }
+.nav-folder-title[data-path="Clippings"] .nav-folder-title-content::before { --lh-ic: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-9 9H5v-6z"/><path d="M12 6l6 6"/></svg>'); }
+.nav-folder-title[data-path="Categories"] .nav-folder-title-content::before { --lh-ic: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>'); }
+.nav-folder-title[data-path="Topics"] .nav-folder-title-content::before { --lh-ic: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>'); }
+.nav-folder-title[data-path="Wiki"] .nav-folder-title-content::before { --lh-ic: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8z"/></svg>'); }
+.nav-folder-title[data-path="Raw"] .nav-folder-title-content::before { --lh-ic: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/></svg>'); }
+.nav-folder-title[data-path="Templates"] .nav-folder-title-content::before,
+.nav-folder-title[data-path="Attachments"] .nav-folder-title-content::before { opacity: .3; }
+
+/* Bases cards: hardcover book look (any card view with a cover image) */
+.bases-view { --bases-cards-background: transparent; --bases-cards-shadow: none; --bases-cards-shadow-hover: none; }
+.bases-view .bases-cards-item { border: 0; background: transparent; }
+.bases-view .bases-cards-cover {
+  border-radius: 3px 8px 8px 3px; overflow: hidden; aspect-ratio: 2 / 3;
+  box-shadow: inset 6px 0 6px -4px rgba(0, 0, 0, .35), inset 1px 0 0 rgba(255, 255, 255, .25), 0 10px 18px -8px rgba(40, 30, 10, .45), 0 2px 4px rgba(40, 30, 10, .15);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.bases-view .bases-cards-item:hover .bases-cards-cover { transform: translateY(-3px) rotate(-.6deg); box-shadow: inset 6px 0 6px -4px rgba(0, 0, 0, .35), 0 16px 24px -10px rgba(40, 30, 10, .5); }
+.bases-view .bases-cards-property.mod-title { font-family: var(--lh-serif); font-size: 1.02em; padding-top: 8px; }

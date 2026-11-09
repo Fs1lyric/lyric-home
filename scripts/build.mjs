@@ -8,6 +8,6 @@ for (const f of ["core", "view"]) {
 }
 try { main += r("src/plugin.js").replace(/require\("\.\/(core|view)(\.js)?"\)/g, (_, n) => `__m.${n}`); } catch {}
 writeFileSync(new URL("../main.js", import.meta.url), main);
-let css = ""; try { css = r("src/styles.css"); } catch {}
-css = css.replace(/url\("\.\.\/fonts\/([^"]+)"\)/g, (_, f) => `url("data:font/woff2;base64,${readFileSync(new URL("../fonts/" + f, import.meta.url)).toString("base64")}")`);
-writeFileSync(new URL("../styles.css", import.meta.url), css);
+const inline = s => s.replace(/url\("\.\.\/fonts\/([^"]+)"\)/g, (_, f) => `url("data:font/woff2;base64,${readFileSync(new URL("../fonts/" + f, import.meta.url)).toString("base64")}")`);
+writeFileSync(new URL("../styles.css", import.meta.url), inline(r("src/styles.css")));
+writeFileSync(new URL("../theme/paper.css", import.meta.url), inline(r("theme/paper.src.css")));
