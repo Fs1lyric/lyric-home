@@ -9,7 +9,7 @@ jobs:
         with:
           node-version: 22
       - name: Unit tests
-        run: node --test test/
+        run: node --test test/*.test.mjs
       - name: Build is up to date
         run: node scripts/build.mjs && git diff --exit-code main.js styles.css
       - name: Screenshots
