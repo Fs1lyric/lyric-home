@@ -77,8 +77,12 @@ module.exports = class LyricHome extends Plugin {
   async review(createIfMissing) {
     const notes = await this.collect();
     const r = core.currentReview(notes, new Date());
-    if (r || !createIfMissing) return r;
+    if (r) return r;
     const now = new Date();
+    // Obsidian's metadata cache can lag right after a create, so also look for today's review by name.
+    const byName = this.file(`${core.dayKey(now)} Weekly Review.md`);
+    if (byName) return { path: byName.path, file: byName, name: byName.basename };
+    if (!createIfMissing) return null;
     const f = await this.create(`${core.dayKey(now)} Weekly Review.md`, await this.template("Weekly Review Template", "Weekly Review", now));
     return { path: f.path, file: f, name: f.basename };
   }
