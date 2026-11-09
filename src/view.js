@@ -18,6 +18,8 @@ const ICONS = {
   calendar: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
   chevron: '<path d="M7 10l5 5 5-5"/>',
   shuffle: '<path d="M4 7h3c4 0 6 10 10 10h3M4 17h3c1.6 0 2.8-1.6 3.9-3.6M14.1 9.6C15.2 8 16.4 7 18 7h2"/><path d="M18 4l3 3-3 3M18 14l3 3-3 3"/>',
+  flame: '<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.4 2.4-5.3 3.6-8.3.4 1.9 1.4 3 2.6 3.6.2-2.9 1.5-5 3.3-6.6.1 3.4 3.5 5.8 3.5 10.5 0 3.9-2.7 7-6.5 7z"/>',
+  chart: '<path d="M4 19h16"/><path d="M5 15l4-5 4 3 6-7"/>',
   moon: '<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5 7.5 7.5 0 1 0 19 14.5z"/>',
 };
 function icon(name, cls = "") {
@@ -41,8 +43,8 @@ function el(tag, cls, kids = [], attrs = {}) {
 }
 const btn = (label, cls, onclick, ic, title) => el("button", "lh-btn " + cls, [ic ? icon(ic) : null, label ? el("span", "", [], { text: label }) : null], { onclick, type: "button", title, "aria-label": title || label });
 
-const STEP_ICON = { inbox: ["inbox", "tone-sand"], letter: ["mail", "tone-sand"], goal: ["target", "tone-green"], project: ["box", "tone-blue"], review: ["review", "tone-rose"] };
-const RING = { words: ["pen", "var(--lh-gold)"], captures: ["sparkle", "var(--lh-rose)"], tasks: ["check", "var(--lh-green)"], goals: ["target", "var(--lh-blue)"] };
+const STEP_ICON = { checkin: ["check", "tone-green"], inbox: ["inbox", "tone-sand"], letter: ["mail", "tone-sand"], goal: ["target", "tone-green"], project: ["box", "tone-blue"], review: ["review", "tone-rose"] };
+const RING = { habits: ["check", "var(--lh-green)"], streak: ["flame", "var(--lh-gold)"], entries: ["chart", "var(--lh-blue)"], tasks: ["review", "var(--lh-rose)"], words: ["pen", "var(--lh-gold)"], captures: ["sparkle", "var(--lh-rose)"], goals: ["target", "var(--lh-blue)"] };
 
 function ring(r) {
   const pct = r.goal > 0 ? Math.min(1, r.value / r.goal) : 0;
@@ -75,13 +77,13 @@ function section(id, ui, tone, ic, label, meta, body, right) {
   ]);
 }
 
-function capture(actions, core) {
+function capture(actions, core, ts) {
   const hint = el("div", "lh-capture-hint", [], { text: "Enter saves a thought. Start with todo to add a to-do for this week." });
-  const input = el("input", "lh-capture-input", [], { type: "text", placeholder: "Capture a thought, or a task: todo call Sam", "aria-label": "Capture" });
+  const input = el("input", "lh-capture-input", [], { type: "text", placeholder: "Log kata, blitz 1012, todo call Sam, or a thought", "aria-label": "Capture" });
   input.addEventListener("input", () => {
-    const p = core.parseCapture(input.value);
+    const p = core.parseCapture(input.value, ts || []);
     hint.textContent = !p ? "Enter saves a thought. Start with todo to add a to-do for this week."
-      : p.kind === "task" ? `Adds to this week's to-dos: “${p.text}”` : `Saves a new thought: “${p.title}”`;
+      : p.kind === "entry" ? `Logs ${p.title}` : p.kind === "task" ? `Adds to this week's to-dos: “${p.text}”` : `Saves a new thought: “${p.title}”`;
   });
   input.addEventListener("keydown", async e => {
     if (e.key !== "Enter" || !input.value.trim()) return;
@@ -119,11 +121,12 @@ function nextBest(m, actions, ui) {
 }
 
 function rhythmCard(m, actions) {
-  const done = m.rhythm.find(r => r.id === "captures");
+  const h = m.rhythm.find(r => r.id === "habits");
+  const done = h && h.goal ? { value: h.value } : null;
   return el("section", "lh-card lh-rhythm", [
     el("div", "lh-rhythm-head", [
       el("span", "lh-sec-label", [], { text: "Today's rhythm" }),
-      done && done.value ? el("span", "lh-chip tone-blue", [], { text: `${done.value} thought${done.value === 1 ? "" : "s"} today` }) : null,
+      done ? el("span", "lh-chip tone-blue", [], { text: done.value === h.goal ? "all habits done" : `${h.goal - done.value} to go today` }) : null,
       el("span", "lh-grow"),
       el("button", "lh-under-link", [], { type: "button", text: "Goals", onclick: () => actions.openPath("Categories/Goals.md") }),
     ]),
@@ -188,6 +191,85 @@ function calendarCard(m, actions, ui) {
   return section("cal", ui, "plain", "calendar", "Calendar", c.label, [el("div", "lh-cal", head.concat(cells))]);
 }
 
+const DOW = ["S", "M", "T", "W", "T", "F", "S"];
+const svg = (w, h, inner, cls) => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("viewBox", `0 0 ${w} ${h}`); s.setAttribute("class", cls); s.innerHTML = inner; return s; };
+
+function habitsCard(m, actions, ui) {
+  const hs = m.habits || [];
+  if (!hs.length) return section("habits", ui, "green", "flame", "Habits", "none yet", [el("div", "lh-empty", [], { text: "Make a habit tracker with New tracker, then check in here every day." })]);
+  const doneN = hs.filter(h => h.streak.doneToday).length;
+  const rows = hs.map(h => {
+    const on = h.streak.doneToday;
+    return el("div", `lh-habit${on ? " is-on" : ""}`, [
+      el("button", "lh-check", [icon("check")], { type: "button", "aria-pressed": on ? "true" : "false", title: on ? `Undo ${h.name} today` : `Done ${h.name} today`, onclick: () => actions.toggleHabit(h) }),
+      el("div", "lh-habit-text", [
+        el("button", "lh-habit-name", [], { type: "button", text: h.name, onclick: () => actions.open(h.note) }),
+        el("div", "lh-habit-sub", [
+          icon("flame", h.streak.current ? "is-hot" : ""),
+          el("span", "", [], { text: h.streak.current ? `${h.streak.current} day streak` : "no streak" }),
+          el("span", "lh-dot", [], { text: "·" }), el("span", "", [], { text: `best ${h.streak.best}` }),
+          el("span", "lh-dot", [], { text: "·" }), el("span", "", [], { text: `${h.rate}% this month` }),
+        ]),
+      ]),
+      el("div", "lh-week", h.days.map(d => el("div", `lh-day${d.done ? " is-done" : ""}${d.key === m.today ? " is-today" : ""}`, [
+        el("span", "lh-day-dot"), el("span", "lh-day-dow", [], { text: DOW[new Date(d.key + "T12:00").getDay()] }),
+      ], { title: `${d.key}: ${d.done ? "done" : "not done"}` }))),
+    ]);
+  });
+  const hm = m.heatmap;
+  const grid = el("div", "lh-heat", hm.weeks.map(w => el("div", "lh-heat-col", w.map(d =>
+    el("div", `lh-heat-cell l${d.level}${d.future ? " is-future" : ""}`, [], { title: `${d.key}: ${d.count} of ${hm.habits}` })))));
+  return section("habits", ui, "green", "flame", "Habits", `${doneN} of ${hs.length} today`, [
+    el("div", "lh-habits", rows),
+    el("div", "lh-heat-wrap", [
+      el("div", "lh-heat-head", [el("span", "lh-sec-label", [], { text: "Last 6 months" }), el("span", "lh-muted", [], { text: `${hm.total} check-ins` }), el("span", "lh-grow"),
+        el("span", "lh-heat-key", [el("span", "lh-muted", [], { text: "less" }), ...[0, 1, 2, 3, 4].map(l => el("span", `lh-heat-cell l${l}`)), el("span", "lh-muted", [], { text: "more" })])]),
+      grid,
+    ]),
+  ]);
+}
+
+function chart(t) {
+  const s = t.series, W = 300, H = 76, P = 6;
+  if (!s.points.length) return el("div", "lh-chart-empty", [], { text: "No entries in the last 90 days" });
+  const t0 = new Date(s.from + "T12:00").getTime(), t1 = new Date(s.to + "T12:00").getTime();
+  const span = s.max - s.min || 1, lo = s.min - span * 0.12, hi = s.max + span * 0.12;
+  const x = d => P + (W - 2 * P) * ((new Date(d + "T12:00").getTime() - t0) / (t1 - t0 || 1));
+  const y = v => P + (H - 2 * P) * (1 - (v - lo) / (hi - lo));
+  const pts = s.points.map(p => [x(p.date), y(p.value)]);
+  const line = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const area = `${line} L${pts[pts.length - 1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`;
+  const goal = t.goal !== null ? `<line x1="0" x2="${W}" y1="${y(t.goal).toFixed(1)}" y2="${y(t.goal).toFixed(1)}" class="lh-chart-goal"/>` : "";
+  const last = pts[pts.length - 1];
+  return svg(W, H, `${goal}<path d="${area}" class="lh-chart-area"/><path d="${line}" class="lh-chart-line" vector-effect="non-scaling-stroke"/>` +
+    pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="1.6" class="lh-chart-pt"/>`).join("") +
+    `<circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.2" class="lh-chart-last"/>`, "lh-chart");
+}
+
+function numbersCard(m, actions, ui) {
+  const ns = m.numbers || [];
+  if (!ns.length) return "";
+  const tiles = ns.map(t => {
+    const s = t.series;
+    const inp = el("input", "lh-log", [], { type: "text", inputmode: "decimal", placeholder: "Log today", "aria-label": `Log ${t.name}` });
+    inp.addEventListener("keydown", async e => { if (e.key === "Enter" && inp.value.trim()) { const v = inp.value.trim(); inp.value = ""; await actions.logNumber(t, v); } });
+    const up = s.delta > 0, down = s.delta < 0;
+    const toGoal = t.goal !== null && s.last !== null ? t.goal - s.last : null;
+    return el("div", "lh-num", [
+      el("div", "lh-num-head", [
+        el("button", "lh-habit-name", [], { type: "button", text: t.name, onclick: () => actions.open(t.note) }),
+        el("span", "lh-grow"),
+        s.delta !== null && s.delta !== 0 ? el("span", `lh-chip ${up ? "tone-green" : "tone-rose"}`, [], { text: `${up ? "▲" : "▼"} ${Math.abs(s.delta)}` }) : null,
+      ]),
+      el("div", "lh-num-value", [el("b", "", [], { text: s.last === null ? "–" : String(s.last) }), t.unit ? el("span", "", [], { text: " " + t.unit }) : null]),
+      el("div", "lh-num-goal", [], { text: t.goal === null ? "no goal set" : toGoal > 0 ? `${toGoal} to go · goal ${t.goal}` : `goal ${t.goal} reached` }),
+      chart(t),
+      inp,
+    ]);
+  });
+  return section("numbers", ui, "blue", "chart", "Numbers", "last 90 days", [el("div", "lh-nums", tiles)]);
+}
+
 function render(root, m, actions, ui = {}, core) {
   root.replaceChildren();
   root.classList.add("lh");
@@ -197,17 +279,20 @@ function render(root, m, actions, ui = {}, core) {
     btn("Search", "is-outline", actions.search, "search"),
     btn("Log something", "is-outline", actions.log, "plus"),
     btn("New note", "is-outline", actions.newNote, "plus"),
+    btn("New tracker", "is-outline", actions.newTracker, "flame"),
     btn("Letter to future me", "is-outline", () => actions.letter(null), "mail"),
   ]);
   root.append(
     el("div", "lh-top", [
       el("div", "lh-title", [el("div", "lh-kicker", [], { text: m.header.kicker }), el("h1", "lh-h1", [], { text: m.header.title })]),
-      capture(actions, core),
+      capture(actions, core, m.trackers),
     ]),
     bar,
     m.topics && m.topics.length ? el("nav", "lh-areas", [el("span", "lh-areas-label", [], { text: "Areas" })].concat(
       m.topics.map(tp => el("button", "lh-area", [], { type: "button", text: tp, onclick: () => actions.openPath(`Topics/${tp}.md`) })))) : "",
     el("div", "lh-grid-a", [nextBest(m, actions, ui), rhythmCard(m, actions)]),
+    habitsCard(m, actions, ui),
+    numbersCard(m, actions, ui),
     pastCard(m, actions, ui) || "",
     stepsCard(m, actions, ui),
     el("div", "lh-grid-b", [weekCard(m, actions, ui), calendarCard(m, actions, ui)]),

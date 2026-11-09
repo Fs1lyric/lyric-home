@@ -167,6 +167,60 @@
 .lh .lh-cal-day.is-today { background: var(--lh-dark); color: var(--lh-dark-ink); font-weight: 650; }
 .lh-cal-day.has-note::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--lh-gold); }
 
+/* habits */
+.tone-blue .lh-sec-head { background: var(--lh-blue-bg); color: var(--lh-blue-ink); }
+.tone-blue .lh-sec-label { color: inherit; }
+.lh-habits { display: flex; flex-direction: column; }
+.lh-habit { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--lh-line); flex-wrap: wrap; }
+.lh-habit:first-child { padding-top: 0; }
+.lh .lh-check { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--lh-line); background: var(--lh-card); display: grid; place-items: center; cursor: pointer; padding: 0; box-shadow: none; color: transparent; transition: all .15s; flex: none; }
+.lh .lh-check:hover { border-color: var(--lh-green); color: var(--lh-green); }
+.lh .lh-habit.is-on .lh-check { background: var(--lh-green); border-color: var(--lh-green); color: var(--lh-card); }
+.lh-check .lh-icon { width: 17px; height: 17px; stroke-width: 2.4; }
+.lh-habit-text { flex: 1 1 200px; min-width: 0; }
+.lh .lh-habit-name { border: 0; background: none; padding: 0; height: auto; box-shadow: none; cursor: pointer; font-weight: 650; font-size: 14px; text-align: left; }
+.lh .lh-habit-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.lh-habit-sub { display: flex; align-items: center; gap: 5px; color: var(--lh-muted); font-size: 12.5px; flex-wrap: wrap; }
+.lh-habit-sub .lh-icon { width: 13px; height: 13px; }
+.lh-habit-sub .lh-icon.is-hot { color: var(--lh-gold); fill: color-mix(in srgb, var(--lh-gold) 35%, transparent); }
+.lh-week { display: flex; gap: 6px; }
+.lh-day { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 18px; }
+.lh-day-dot { width: 14px; height: 14px; border-radius: 4px; background: var(--lh-line); }
+.lh-day.is-done .lh-day-dot { background: var(--lh-green); }
+.lh-day.is-today .lh-day-dot { outline: 1.5px solid var(--lh-ink-2); outline-offset: 1.5px; }
+.lh-day-dow { font-size: 10px; color: var(--lh-muted); }
+.lh-heat-wrap { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--lh-line); }
+.lh-heat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.lh-heat-key { display: flex; align-items: center; gap: 3px; }
+.lh-heat { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; }
+.lh-heat-col { display: grid; grid-template-rows: repeat(7, auto); gap: 3px; }
+.lh-heat-cell { aspect-ratio: 1; border-radius: 3px; background: var(--lh-line); min-width: 0; }
+.lh-heat-key .lh-heat-cell { width: 10px; height: 10px; }
+.lh-heat-cell.l1 { background: color-mix(in srgb, var(--lh-green) 30%, var(--lh-line)); }
+.lh-heat-cell.l2 { background: color-mix(in srgb, var(--lh-green) 55%, var(--lh-line)); }
+.lh-heat-cell.l3 { background: color-mix(in srgb, var(--lh-green) 78%, var(--lh-line)); }
+.lh-heat-cell.l4 { background: var(--lh-green); }
+.lh-heat-cell.is-future { background: transparent; outline: 1px dashed var(--lh-line); outline-offset: -1px; }
+
+/* numbers */
+.lh-nums { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.lh-num { border: 1px solid var(--lh-line); border-radius: 10px; padding: 12px 12px 10px; background: var(--lh-paper); min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lh-num-head { display: flex; align-items: center; gap: 6px; }
+.lh-num-value b { font-family: var(--lh-serif); font-weight: 450; font-size: 32px; line-height: 1.1; }
+.lh-num-value span { color: var(--lh-muted); }
+.lh-num-goal { color: var(--lh-muted); font-size: 12px; }
+.lh-chip.tone-green { background: var(--lh-green-bg); color: var(--lh-green-ink); }
+.lh-chip.tone-rose { background: var(--lh-rose-bg); color: var(--lh-rose-ink); }
+.lh-chart { width: 100%; height: auto; aspect-ratio: 300 / 76; margin: 6px 0 8px; color: var(--lh-blue); overflow: visible; }
+.lh-chart-line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.lh-chart-area { fill: currentColor; opacity: .12; }
+.lh-chart-pt { fill: currentColor; opacity: .6; }
+.lh-chart-last { fill: var(--lh-card); stroke: currentColor; stroke-width: 2; }
+.lh-chart-goal { stroke: var(--lh-gold); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.lh-chart-empty { color: var(--lh-muted); font-size: 12.5px; padding: 26px 0; text-align: center; }
+.lh .lh-log { width: 100%; height: 32px; border: 1px dashed var(--lh-line); border-radius: 7px; background: transparent; padding: 0 10px; font-size: 13px; outline: 0; box-shadow: none; }
+.lh .lh-log:focus { border-style: solid; border-color: var(--lh-ink-2); }
+
 /* Obsidian: give the Home note room and hide its chrome */
 .lh-home .markdown-preview-sizer, .lh-home .cm-sizer, .lh-home .markdown-source-view.mod-cm6 .cm-contentContainer > .cm-content { max-width: 1160px !important; }
 .lh-home .inline-title, .lh-home .metadata-container, .lh-home .embedded-backlinks, .lh-home .mod-header .frontmatter-container { display: none !important; }
@@ -182,6 +236,8 @@
   .lh-capture { flex-basis: 100%; }
   .lh-step-actions { width: 100%; padding-left: 46px; }
   .lh-sec-right { display: none; }
+  .lh-week { width: 100%; padding-left: 46px; justify-content: space-between; }
+  .lh-day { width: auto; }
   .lh-sec-head > .lh-under-link { white-space: nowrap; }
 }
 

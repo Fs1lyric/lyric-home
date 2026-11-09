@@ -87,10 +87,52 @@ module.exports = class LyricHome extends Plugin {
     return { path: f.path, file: f, name: f.basename };
   }
 
+  // ---- trackers ----
+  // Set (raw) or clear (null) one day's entry in a tracker note. Entries are plain lines: "- YYYY-MM-DD: value".
+  async writeEntry(path, date, raw) {
+    const f = this.file(path);
+    if (!f) return;
+    await this.app.vault.process(f, src => {
+      const re = new RegExp(`^\\s*[-*+]\\s+${date}\\s*:{1,2}.*$`);
+      const lines = src.replace(/\s+$/, "").split("\n").filter(l => !re.test(l));
+      if (raw !== null) {
+        let at = lines.length;
+        for (let i = lines.length - 1; i >= 0; i--) if (/^\s*[-*+]\s+\d{4}-\d{2}-\d{2}\s*:/.test(lines[i])) { at = i + 1; break; }
+        lines.splice(at, 0, `- ${date}: ${raw}`);
+      }
+      return lines.join("\n") + "\n";
+    });
+  }
+  async toggleHabit(h) {
+    const today = core.dayKey(new Date());
+    const done = core.streak(h, new Date()).doneToday;
+    await this.writeEntry(h.path, today, done ? null : "yes");
+  }
+  async logNumber(t, raw) {
+    if (!Number.isFinite(parseFloat(raw))) { new Notice(`"${raw}" isn't a number`); return; }
+    await this.writeEntry(t.path, core.dayKey(new Date()), String(raw).trim());
+    new Notice(`${t.name}: ${raw}`);
+  }
+  newTracker() {
+    new TrackerModal(this.app, async (name, kind, unit, goal) => {
+      const fm = ["---", "categories:", '  - "[[Trackers]]"', `kind: ${kind}`, `created: ${core.dayKey(new Date())}`,
+        unit ? `unit: ${unit}` : null, goal ? `goal: ${goal}` : null, "aliases: []", "---"].filter(x => x !== null).join("\n");
+      const f = await this.create(`Trackers/${core.safeTitle(name)}.md`, `${fm}\n${kind === "habit" ? "Check in from Home, or type the name in the capture box." : "Log from Home, or type the name and a number in the capture box."}\n\n`);
+      new Notice(`Tracker made: ${f.basename}`);
+    }).open();
+  }
+
   // ---- actions ----
   async capture(text) {
-    const c = core.parseCapture(text);
+    const ts = core.trackers(await this.collect());
+    const c = core.parseCapture(text, ts);
     if (!c) return;
+    if (c.kind === "entry") {
+      const tr = ts.find(x => x.name === c.tracker);
+      await this.writeEntry(tr.path, core.dayKey(new Date()), c.raw);
+      new Notice(c.title);
+      return;
+    }
     if (c.kind === "task") return this.addTodo(c.text);
     const now = new Date();
     const tpl = await this.template("Journal Template", c.title, now);
@@ -167,8 +209,12 @@ module.exports = class LyricHome extends Plugin {
       capture: v => this.capture(v),
       addTodo: v => this.addTodo(v),
       toggleTodo: t => this.toggleTodo(t),
+      toggleHabit: h => this.toggleHabit(h),
+      logNumber: (tr, v) => this.logNumber(tr, v),
+      newTracker: () => this.newTracker(),
       step: async s => {
         if (s.kind === "inbox") return this.sortInbox();
+        if (s.kind === "checkin") { const el = block.containerEl.querySelector(".lh-habits"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
         if (s.kind === "review") return this.openFile((await this.review(true)).file);
         if (s.note) return this.openFile(s.note.file || this.file(s.note.path));
       },
@@ -219,6 +265,29 @@ class LogModal extends Modal {
     btns[0].addClass("mod-cta");
     const name = this.contentEl.createEl("input", { type: "text", cls: "lh-modal-input", attr: { placeholder: "Name or title" } });
     name.addEventListener("keydown", e => { if (e.key === "Enter" && name.value.trim()) { this.done(kind, name.value.trim()); this.close(); } });
+    name.focus();
+  }
+  onClose() { this.contentEl.empty(); }
+}
+class TrackerModal extends Modal {
+  constructor(app, done) { super(app); this.done = done; }
+  onOpen() {
+    this.titleEl.setText("New tracker");
+    let kind = "habit";
+    const row = this.contentEl.createDiv({ cls: "lh-modal-row" });
+    const b1 = row.createEl("button", { text: "Habit (yes / no)", cls: "mod-cta" });
+    const b2 = row.createEl("button", { text: "Number (Elo, reps, kg…)" });
+    const name = this.contentEl.createEl("input", { type: "text", cls: "lh-modal-input", attr: { placeholder: "Name, e.g. Kata or Blitz Elo" } });
+    const extra = this.contentEl.createDiv({ cls: "lh-modal-row" });
+    const unit = extra.createEl("input", { type: "text", attr: { placeholder: "Unit (Elo, kg)" } });
+    const goal = extra.createEl("input", { type: "text", attr: { placeholder: "Goal (optional)" } });
+    extra.hide();
+    b1.onclick = () => { kind = "habit"; b1.addClass("mod-cta"); b2.removeClass("mod-cta"); extra.hide(); name.focus(); };
+    b2.onclick = () => { kind = "number"; b2.addClass("mod-cta"); b1.removeClass("mod-cta"); extra.show(); name.focus(); };
+    const go = this.contentEl.createDiv({ cls: "lh-modal-row" }).createEl("button", { text: "Create", cls: "mod-cta" });
+    const submit = () => { if (!name.value.trim()) return; this.done(name.value.trim(), kind, unit.value.trim(), goal.value.trim()); this.close(); };
+    go.onclick = submit;
+    name.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
     name.focus();
   }
   onClose() { this.contentEl.empty(); }

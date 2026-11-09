@@ -82,19 +82,15 @@ test("currentReview: the weekly review created this ISO week", () => {
   assert.equal(core.currentReview([old], NOW), null);
 });
 
-test("rhythm: words and captures today, tasks this week, goals touched", () => {
-  const today = day(2026, 11, 9);
+test("rhythm: habits today, best live streak, entries this week, week to-dos", () => {
   const notes = [
-    note("Daily/2026-11-09.md", { categories: ["[[Daily]]"], created: "2026-11-09" }, "one two three", today),
-    note("2026-11-09 1000 idea.md", { categories: ["[[Journal]]"] }, "four five", today),
-    note("old.md", { categories: ["[[Journal]]"], created: "2026-11-01" }, "many words here", day(2026, 11, 1), today),
-    note("Goal A.md", { categories: ["[[Goals]]"], status: "active" }, "", day(2026, 10, 1), day(2026, 11, 9)),
-    note("Goal B.md", { categories: ["[[Goals]]"] }, "", day(2026, 10, 1), day(2026, 11, 8)),
-    note("Done P.md", { categories: ["[[Projects]]"], status: "done" }, "", day(2026, 10, 1), today),
+    note("Trackers/Kata.md", { categories: ["[[Trackers]]"], kind: "habit" }, "- 2026-11-07: yes\n- 2026-11-08: yes\n- 2026-11-09: yes"),
+    note("Trackers/Reading.md", { categories: ["[[Trackers]]"], kind: "habit" }, "- 2026-11-08: yes"),
+    note("Trackers/Blitz.md", { categories: ["[[Trackers]]"], kind: "number", goal: 1000 }, "- 2026-11-02: 900\n- 2026-11-09: 950"),
   ];
   const review = { body: "## This week's to-dos\n- [x] a\n- [ ] b\n- [x] c" };
   const r = Object.fromEntries(core.rhythm(notes, NOW, review).map(x => [x.id, [x.value, x.goal]]));
-  assert.deepEqual(r, { words: [5, 300], captures: [1, 3], tasks: [2, 3], goals: [1, 2] });
+  assert.deepEqual(r, { habits: [1, 2], streak: [3, 7], entries: [2, 3], tasks: [2, 3] });
 });
 
 test("agoText", () => {
@@ -179,4 +175,85 @@ test("calendar: month grid starts Monday, marks notes and today", () => {
   assert.equal(cells.find(x => x.key === "2026-11-01").hasNote, true);
   assert.equal(cells.find(x => x.key === "2026-11-09").today, true);
   assert.equal(cells.length % 7, 0);
+});
+
+// ---- trackers ----
+const habit = (name, body, fm = {}) => note(`Trackers/${name}.md`, Object.assign({ categories: ["[[Trackers]]"], kind: "habit" }, fm), body);
+const num = (name, body, fm = {}) => note(`Trackers/${name}.md`, Object.assign({ categories: ["[[Trackers]]"], kind: "number" }, fm), body);
+
+test("parseEntries: dated lines, last one per day wins, sorted", () => {
+  const body = "Notes about kata.\n- 2026-11-09: yes\n- 2026-11-07: no\n* 2026-11-08 :: 12.5 kg\n- 2026-11-09: 1\nnot an entry 2026-11-01: yes";
+  assert.deepEqual(core.parseEntries(body), [
+    { date: "2026-11-07", raw: "no" }, { date: "2026-11-08", raw: "12.5 kg" }, { date: "2026-11-09", raw: "1" },
+  ]);
+});
+
+test("tracker: habit values become done flags; number values become numbers", () => {
+  const h = core.tracker(habit("Kata", "- 2026-11-08: yes\n- 2026-11-09: no\n- 2026-11-07: done", { aliases: ["kata practice"] }));
+  assert.deepEqual(h.entries.map(e => e.done), [true, true, false]);
+  assert.deepEqual(h.names, ["kata", "kata practice"]);
+  const n = core.tracker(num("Blitz Elo", "- 2026-11-08: 950\n- 2026-11-09: oops", { goal: 1000, unit: "Elo", aliases: "blitz" }));
+  assert.deepEqual(n.entries.map(e => e.value), [950]);
+  assert.equal(n.goal, 1000);
+  assert.deepEqual(n.names, ["blitz elo", "blitz"]);
+});
+
+test("streak: counts back from today, or from yesterday if today isn't logged yet", () => {
+  const t = core.tracker(habit("Kata", "- 2026-11-05: yes\n- 2026-11-06: yes\n- 2026-11-07: yes\n- 2026-11-08: yes"));
+  assert.deepEqual(core.streak(t, NOW), { current: 4, best: 4, doneToday: false });
+  const t2 = core.tracker(habit("Kata", "- 2026-11-01: yes\n- 2026-11-02: yes\n- 2026-11-03: yes\n- 2026-11-09: yes"));
+  assert.deepEqual(core.streak(t2, NOW), { current: 1, best: 3, doneToday: true });
+  assert.deepEqual(core.streak(core.tracker(habit("X", "")), NOW), { current: 0, best: 0, doneToday: false });
+});
+
+test("lastDays: done flags for the last 7 days, oldest first", () => {
+  const t = core.tracker(habit("Kata", "- 2026-11-03: yes\n- 2026-11-09: yes\n- 2026-11-05: no"));
+  assert.deepEqual(core.lastDays(t, NOW, 7).map(d => [d.key.slice(8), d.done]),
+    [["03", true], ["04", false], ["05", false], ["06", false], ["07", false], ["08", false], ["09", true]]);
+});
+
+test("heatmap: Monday-first weeks, level = share of habits done that day", () => {
+  const hs = [core.tracker(habit("A", "- 2026-11-09: yes\n- 2026-11-02: yes")), core.tracker(habit("B", "- 2026-11-09: yes"))];
+  const h = core.heatmap(hs, NOW, 4);
+  assert.equal(h.weeks.length, 4);
+  assert.equal(h.weeks[3][0].key, "2026-11-09");
+  assert.equal(h.weeks[3][0].level, 4);
+  assert.equal(h.weeks[2][0].level, 2);
+  assert.equal(h.weeks[3][1].future, true);
+  assert.equal(h.total, 3);
+});
+
+test("series: number entries in a window, with change vs the previous entry", () => {
+  const t = core.tracker(num("Blitz", "- 2026-08-01: 700\n- 2026-11-01: 900\n- 2026-11-08: 950", { goal: 1000 }));
+  const s = core.series(t, NOW, 60);
+  assert.deepEqual(s.points.map(p => p.value), [900, 950]);
+  assert.equal(s.last, 950);
+  assert.equal(s.delta, 50);
+  assert.equal(s.min, 900);
+  assert.equal(s.max, 1000, "max includes the goal so the goal line fits");
+});
+
+test("parseCapture with trackers: habit check-ins and number entries", () => {
+  const ts = [core.tracker(habit("Kata", "")), core.tracker(num("Blitz Elo", "", { aliases: ["blitz", "elo"] })), core.tracker(habit("Bangla handwriting", "", { aliases: ["handwriting"] }))];
+  assert.deepEqual(core.parseCapture("kata", ts), { kind: "entry", tracker: "Kata", raw: "yes", title: "Kata: done today" });
+  assert.deepEqual(core.parseCapture("Kata no", ts), { kind: "entry", tracker: "Kata", raw: "no", title: "Kata: not today" });
+  assert.deepEqual(core.parseCapture("blitz 1012", ts), { kind: "entry", tracker: "Blitz Elo", raw: "1012", title: "Blitz Elo: 1012" });
+  assert.deepEqual(core.parseCapture("blitz elo 1012", ts), { kind: "entry", tracker: "Blitz Elo", raw: "1012", title: "Blitz Elo: 1012" });
+  assert.deepEqual(core.parseCapture("bangla handwriting", ts).tracker, "Bangla handwriting");
+  assert.equal(core.parseCapture("blitz is fun to play", ts).kind, "thought");
+  assert.equal(core.parseCapture("kata was hard today", ts).kind, "thought");
+});
+
+test("model: trackers split into habits and numbers", () => {
+  const m = core.model([habit("Kata", "- 2026-11-09: yes"), num("Blitz", "- 2026-11-09: 950"), note("Templates/Tracker Template.md", { categories: ["[[Trackers]]"], kind: "habit" })], NOW, {});
+  assert.deepEqual(m.habits.map(h => [h.name, h.streak.current]), [["Kata", 1]]);
+  assert.deepEqual(m.numbers.map(n => [n.name, n.series.last]), [["Blitz", 950]]);
+  assert.equal(m.heatmap.weeks.length, 26);
+});
+
+test("nextSteps: a check-in step lists habits not done today", () => {
+  const s = core.nextSteps([habit("Kata", "- 2026-11-09: yes"), habit("Reading", ""), habit("Painting", "- 2026-11-08: yes")], NOW, {});
+  const c = s.find(x => x.id === "checkin");
+  assert.equal(c.title, "2 habits left today");
+  assert.equal(c.sub, "Painting · Reading");
 });

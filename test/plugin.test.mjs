@@ -160,3 +160,31 @@ test("buttons fall back to built-in commands", async () => {
   a.search(); a.newNote();
   assert.deepEqual(app.ran, ["global-search:open", "zk-prefixer"]);
 });
+
+test("toggleHabit adds today's yes, then removes it", async () => {
+  at();
+  const k = { content: "---\nkind: habit\n---\nNotes.\n- 2026-11-08: yes\n", fm: { categories: ["[[Trackers]]"], kind: "habit" } };
+  const { app, a } = await setup({ "Trackers/Kata.md": k });
+  const core = createRequire(import.meta.url)("../src/core.js");
+  const h = () => core.tracker({ path: "Trackers/Kata.md", name: "Kata", folder: "Trackers", fm: k.fm, body: app.store.get("Trackers/Kata.md").content });
+  await a.toggleHabit(h());
+  assert.equal(app.store.get("Trackers/Kata.md").content, "---\nkind: habit\n---\nNotes.\n- 2026-11-08: yes\n- 2026-11-09: yes\n");
+  await a.toggleHabit(h());
+  assert.equal(app.store.get("Trackers/Kata.md").content, "---\nkind: habit\n---\nNotes.\n- 2026-11-08: yes\n");
+  mock.timers.reset();
+});
+
+test("logNumber replaces today's value; capture logs tracker entries", async () => {
+  at();
+  const b = { content: "---\nkind: number\n---\n- 2026-11-08: 950\n\nSome notes below.\n", fm: { categories: ["[[Trackers]]"], kind: "number", aliases: ["blitz"] } };
+  const { app, a } = await setup({ "Trackers/Blitz Elo.md": b });
+  await a.logNumber({ path: "Trackers/Blitz Elo.md", name: "Blitz Elo" }, "1001");
+  await a.logNumber({ path: "Trackers/Blitz Elo.md", name: "Blitz Elo" }, "1012");
+  assert.equal(app.store.get("Trackers/Blitz Elo.md").content, "---\nkind: number\n---\n- 2026-11-08: 950\n- 2026-11-09: 1012\n\nSome notes below.\n");
+  await a.logNumber({ path: "Trackers/Blitz Elo.md", name: "Blitz Elo" }, "abc");
+  assert.match(app.store.get("Trackers/Blitz Elo.md").content, /2026-11-09: 1012\n/);
+  await a.capture("blitz 1020");
+  assert.match(app.store.get("Trackers/Blitz Elo.md").content, /- 2026-11-09: 1020\n\nSome/);
+  assert.ok(![...app.store.keys()].some(p => p.startsWith("2026-11-09 1805")), "an entry is not saved as a thought");
+  mock.timers.reset();
+});
