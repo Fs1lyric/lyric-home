@@ -11,6 +11,7 @@ class MarkdownRenderChild { constructor(el) { this.containerEl = el; } }
 const obsidian = { Plugin, Modal, Notice, MarkdownRenderChild, normalizePath: p => p.replace(/\/+/g, "/").replace(/^\//, "") };
 const origLoad = Module._load;
 Module._load = function (req, ...rest) { return req === "obsidian" ? obsidian : origLoad.call(this, req, ...rest); };
+globalThis.window = globalThis;
 const LyricHome = createRequire(import.meta.url)("../main.js");
 
 const WEEKLY = `---
@@ -46,6 +47,7 @@ function fakeApp(files) {
   const app = {
     opened, store, ran: [],
     vault: {
+      on: () => ({}),
       getMarkdownFiles: () => [...store.keys()].filter(p => p.endsWith(".md")).map(tfile),
       getAbstractFileByPath: p => store.has(p) ? tfile(p) : folders.has(p) ? { path: p } : null,
       cachedRead: async f => store.get(f.path).content,
@@ -54,7 +56,7 @@ function fakeApp(files) {
       createFolder: async p => folders.add(p),
       process: async (f, fn) => { const s = store.get(f.path); s.content = fn(s.content); return s.content; },
     },
-    metadataCache: { getFileCache: f => { const s = store.get(f.path); const fm = parseFm(s.content);
+    metadataCache: { on: () => ({}), getFileCache: f => { const s = store.get(f.path); const fm = parseFm(s.content);
       return { frontmatter: s.fm, frontmatterPosition: fm ? { end: { offset: fm.end } } : undefined }; } },
     fileManager: { processFrontMatter: async (f, fn) => fn(store.get(f.path).fm) },
     workspace: { getLeaf: () => ({ openFile: async f => opened.push(f.path) }) },
