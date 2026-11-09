@@ -1,12 +1,8 @@
 # Next: rebuild second-brain as a tracking + research vault
 
-**Status 2026-11-09 (late):** DONE: trackers (habits with check-ins, 7-day dots, streaks, 6-month heatmap; numbers with SVG line charts and goal lines;
-capture logs `kata` / `blitz 1012`; New tracker modal; 41 tests green; screenshots OK). The vault has 5 habits and 3 Elo trackers in `Trackers/`.
-**Left:** goals & projects with `progress` bars, the research board (question / to-read / reading / done), replacing the Journal and
-"Close the day" buttons (journaling moved to vaulted), and updating the vault's `/daily` command into `/log`.
-
-Written 2026-11-09 at the end of a long session. Start a fresh session with:
-"Read ~/claude/lyric-home/PLAN.md and build it."
+**Status 2026-11-09: ALL DONE.** Trackers (habits, streaks, heatmap, number charts), goals & projects with progress bars and −/+,
+research board (question → to-read → reading → done, `? question` capture), tracking buttons instead of journal ones, calendar dots
+on logged days; vault has `/log`, no Daily notes or Calendar plugin. 46 tests green. Kept below for history.
 
 ## Where things stand
 - **Vault** `~/claude/second-brain` (private Fs1lyric/second-brain, git, Obsidian 1.15) is **empty on purpose**: the user restarted it.
