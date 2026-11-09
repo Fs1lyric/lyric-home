@@ -1,5 +1,10 @@
 # Next: rebuild second-brain as a tracking + research vault
 
+**Status 2026-11-09 (late):** DONE: trackers (habits with check-ins, 7-day dots, streaks, 6-month heatmap; numbers with SVG line charts and goal lines;
+capture logs `kata` / `blitz 1012`; New tracker modal; 41 tests green; screenshots OK). The vault has 5 habits and 3 Elo trackers in `Trackers/`.
+**Left:** goals & projects with `progress` bars, the research board (question / to-read / reading / done), replacing the Journal and
+"Close the day" buttons (journaling moved to vaulted), and updating the vault's `/daily` command into `/log`.
+
 Written 2026-11-09 at the end of a long session. Start a fresh session with:
 "Read ~/claude/lyric-home/PLAN.md and build it."
 
