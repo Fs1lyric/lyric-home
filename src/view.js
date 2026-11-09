@@ -105,17 +105,17 @@ function nextBest(m, actions, ui) {
       el("div", "lh-best-text", [
         el("div", "lh-kicker", [], { text: "Next best step" }),
         el("div", "lh-best-title", [], { text: s ? s.title : "Nothing waiting. Enjoy the quiet." }),
-        el("div", "lh-best-sub", [], { text: s ? s.sub : "Capture a thought above, or write in today's note." }),
+        el("div", "lh-best-sub", [], { text: s ? s.sub : "Log something above, or ask a research question with ?" }),
       ]),
       el("div", "lh-best-actions", s ? [
         btn(s.action, "is-dark", () => actions.step(s)),
         steps.length > 1 ? btn("Something else", "is-link", other) : null,
-      ] : [btn("Open today", "is-dark", actions.openDaily)]),
+      ] : [btn("Check in", "is-dark", actions.checkIn)]),
     ]),
     el("div", "lh-under", [
       el("button", "lh-under-link", [], { type: "button", text: "Revisit a random note", onclick: actions.randomNote }),
       el("span", "lh-dot", [], { text: "·" }),
-      el("button", "lh-under-link", [], { type: "button", text: "Close the day", onclick: actions.openDaily }),
+      el("button", "lh-under-link", [], { type: "button", text: "Check in", onclick: actions.checkIn }),
     ]),
   ]);
 }
@@ -186,9 +186,9 @@ function weekCard(m, actions, ui) {
 function calendarCard(m, actions, ui) {
   const c = m.calendar;
   const head = ["M", "T", "W", "T", "F", "S", "S"].map(d => el("div", "lh-cal-dow", [], { text: d }));
-  const cells = c.weeks.flat().map(d => el("button", `lh-cal-day${d.inMonth ? "" : " is-out"}${d.today ? " is-today" : ""}${d.hasNote ? " has-note" : ""}`,
-    [el("span", "", [], { text: String(d.day) })], { type: "button", title: d.key, onclick: () => actions.openDay(d.key) }));
-  return section("cal", ui, "plain", "calendar", "Calendar", c.label, [el("div", "lh-cal", head.concat(cells))]);
+  const cells = c.weeks.flat().map(d => el("div", `lh-cal-day${d.inMonth ? "" : " is-out"}${d.today ? " is-today" : ""}${d.hasNote ? " has-note" : ""}`,
+    [el("span", "", [], { text: String(d.day) })], { title: `${d.key}${d.hasNote ? ": logged" : ""}` }));
+  return section("cal", ui, "plain", "calendar", "Calendar", `${c.label} · dots = days you logged`, [el("div", "lh-cal", head.concat(cells))]);
 }
 
 const DOW = ["S", "M", "T", "W", "T", "F", "S"];
@@ -270,16 +270,58 @@ function numbersCard(m, actions, ui) {
   return section("numbers", ui, "blue", "chart", "Numbers", "last 90 days", [el("div", "lh-nums", tiles)]);
 }
 
+function goalsCard(m, actions, ui) {
+  const gs = m.goals || [];
+  const rows = gs.map(g => el("div", "lh-goal", [
+    el("div", `lh-tile is-small ${g.kind === "goal" ? "tone-green" : "tone-blue"}`, [icon(g.kind === "goal" ? "target" : "box")]),
+    el("div", "lh-goal-text", [
+      el("div", "lh-goal-top", [
+        el("button", "lh-habit-name", [], { type: "button", text: g.name, onclick: () => actions.open(g.note) }),
+        g.status !== "active" ? el("span", "lh-chip tone-plain", [], { text: g.status }) : null,
+        el("span", "lh-grow"),
+        el("span", "lh-goal-pct", [], { text: `${g.progress}%` }),
+      ]),
+      el("div", "lh-bar-track", [el("div", "lh-bar-fill", [], { style: `width:${g.progress}%` })], { role: "progressbar", "aria-valuenow": String(g.progress), "aria-valuemin": "0", "aria-valuemax": "100", "aria-label": `${g.name} progress` }),
+      el("div", "lh-step-sub", [], { text: [g.next ? `Next: ${g.next}` : "No next step yet", g.topic].filter(Boolean).join(" · ") }),
+    ]),
+    el("div", "lh-goal-actions", [
+      btn("−", "is-outline is-icon", () => actions.bumpProgress(g, -10), null, `Less progress on ${g.name}`),
+      btn("+", "is-outline is-icon", () => actions.bumpProgress(g, 10), null, `More progress on ${g.name}`),
+    ]),
+  ]));
+  return section("goals", ui, "sand", "target", "Goals & projects", gs.length ? `${gs.filter(g => g.status === "active").length} active` : "none yet", [
+    rows.length ? el("div", "lh-goals", rows) : el("div", "lh-empty", [], { text: "Make a goal or project from a template (Alt+T). Progress comes from its checkboxes, or set a progress number." }),
+    el("div", "lh-sec-foot", [btn("New goal", "is-outline", () => actions.newGoal("goal"), "target"), btn("New project", "is-outline", () => actions.newGoal("project"), "box")]),
+  ]);
+}
+
+function researchCard(m, actions, ui) {
+  const cols = m.research || [];
+  const total = cols.reduce((s, c) => s + c.items.length, 0);
+  const NEXT = { question: "Find a source", "to-read": "Start reading", reading: "Mark done" };
+  const board = el("div", "lh-board", cols.map(c => el("div", `lh-col-stage stage-${c.id}`, [
+    el("div", "lh-col-head", [el("span", "lh-sec-label", [], { text: c.label }), el("span", "lh-muted", [], { text: String(c.items.length) })]),
+    ...c.items.map(i => el("div", "lh-rcard", [
+      el("button", "lh-rcard-title", [], { type: "button", text: i.name, onclick: () => actions.open(i.note) }),
+      i.conclusion ? el("div", "lh-rcard-conc", [], { text: i.conclusion }) : null,
+      i.topic || i.source ? el("div", "lh-step-sub", [], { text: [i.topic, i.source ? "has source" : ""].filter(Boolean).join(" · ") }) : null,
+      NEXT[i.stage] ? el("button", "lh-under-link lh-rcard-move", [], { type: "button", text: `${NEXT[i.stage]} →`, onclick: () => actions.moveStage(i) }) : null,
+    ])),
+    c.items.length ? null : el("div", "lh-col-empty", [], { text: c.id === "question" ? "Type ? and a question in the capture box" : "–" }),
+  ])));
+  return section("research", ui, "rose", "sparkle", "Research", total ? `${total} item${total === 1 ? "" : "s"}` : "start with a question", [board]);
+}
+
 function render(root, m, actions, ui = {}, core) {
   root.replaceChildren();
   root.classList.add("lh");
   const bar = el("div", "lh-bar", [
-    btn("Journal", "is-outline", actions.openDaily, "journal"),
     btn("Weekly review", "is-outline", actions.openReview, "review"),
     btn("Search", "is-outline", actions.search, "search"),
     btn("Log something", "is-outline", actions.log, "plus"),
     btn("New note", "is-outline", actions.newNote, "plus"),
     btn("New tracker", "is-outline", actions.newTracker, "flame"),
+    btn("Research question", "is-outline", actions.newQuestion, "sparkle"),
     btn("Letter to future me", "is-outline", () => actions.letter(null), "mail"),
   ]);
   root.append(
@@ -293,6 +335,8 @@ function render(root, m, actions, ui = {}, core) {
     el("div", "lh-grid-a", [nextBest(m, actions, ui), rhythmCard(m, actions)]),
     habitsCard(m, actions, ui),
     numbersCard(m, actions, ui),
+    goalsCard(m, actions, ui),
+    researchCard(m, actions, ui),
     pastCard(m, actions, ui) || "",
     stepsCard(m, actions, ui),
     el("div", "lh-grid-b", [weekCard(m, actions, ui), calendarCard(m, actions, ui)]),

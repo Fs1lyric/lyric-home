@@ -188,3 +188,22 @@ test("logNumber replaces today's value; capture logs tracker entries", async () 
   assert.ok(![...app.store.keys()].some(p => p.startsWith("2026-11-09 1805")), "an entry is not saved as a thought");
   mock.timers.reset();
 });
+
+test("capture '? …' creates a research question; moveStage and bumpProgress set one property", async () => {
+  at();
+  const g = { content: "---\nstatus: active\n---\n", fm: { categories: ["[[Goals]]"], status: "active" } };
+  const { app, a } = await setup({ "Black belt.md": g });
+  await a.capture("? why do endgames feel slow");
+  const q = app.store.get("why do endgames feel slow.md");
+  assert.ok(q, [...app.store.keys()].join("\n"));
+  assert.match(q.content, /stage: question/);
+  await a.moveStage({ path: "why do endgames feel slow.md", stage: "question" });
+  assert.equal(app.store.get("why do endgames feel slow.md").fm.stage, "to-read");
+  await a.moveStage({ path: "why do endgames feel slow.md", stage: "done" });
+  assert.equal(app.store.get("why do endgames feel slow.md").fm.stage, "to-read", "done is the last stage");
+  await a.bumpProgress({ path: "Black belt.md", progress: 95 }, 10);
+  assert.equal(app.store.get("Black belt.md").fm.progress, 100);
+  await a.bumpProgress({ path: "Black belt.md", progress: 5 }, -10);
+  assert.equal(app.store.get("Black belt.md").fm.progress, 0);
+  mock.timers.reset();
+});

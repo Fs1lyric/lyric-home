@@ -294,11 +294,46 @@ function nextSteps(notes, now, state = {}) {
   return out.filter(s => !hidden(s.id, state, today));
 }
 
+// ---- goals & research ----
+function goals(notes) {
+  const order = { active: 0, idea: 1, paused: 2 };
+  return notes
+    .filter(n => (hasCat(n, "Goals") || hasCat(n, "Projects")) && !/^Templates(\/|$)/.test(n.folder))
+    .map(n => {
+      const status = String((n.fm && n.fm.status) || "active").toLowerCase();
+      const boxes = String(n.body || "").split("\n").map(l => l.match(TASK)).filter(m => m && m[2].trim());
+      const p = Number(n.fm && n.fm.progress);
+      const progress = Number.isFinite(p) && n.fm.progress !== "" && n.fm.progress !== null
+        ? Math.max(0, Math.min(100, Math.round(p)))
+        : boxes.length ? Math.round(100 * boxes.filter(m => m[1] !== " ").length / boxes.length) : 0;
+      const nt = firstOpenTask(n.body);
+      return { name: n.name, path: n.path, note: n, kind: hasCat(n, "Goals") ? "goal" : "project", status, progress,
+        next: nt ? nt.text : "", topic: topicsOf(n)[0] || "", mtime: n.mtime };
+    })
+    .filter(g => !["done", "dropped"].includes(g.status))
+    .sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3) || a.name.localeCompare(b.name));
+}
+const STAGES = [["question", "Questions"], ["to-read", "To read"], ["reading", "Reading"], ["done", "Done"]];
+function nextStage(s) { const i = STAGES.findIndex(x => x[0] === s); return i >= 0 && i < STAGES.length - 1 ? STAGES[i + 1][0] : null; }
+function researchBoard(notes) {
+  const items = notes
+    .filter(n => hasCat(n, "Research") && !/^(Templates|Wiki|Raw)(\/|$)/.test(n.folder))
+    .map(n => {
+      const s = String((n.fm && n.fm.stage) || "question").toLowerCase();
+      return { name: n.name, path: n.path, note: n, stage: STAGES.some(x => x[0] === s) ? s : "question",
+        source: n.fm && n.fm.source ? String(n.fm.source) : "", conclusion: n.fm && n.fm.conclusion ? String(n.fm.conclusion) : "",
+        topic: topicsOf(n)[0] || "" };
+    });
+  return STAGES.map(([id, label]) => ({ id, label, items: items.filter(i => i.stage === id).sort((a, b) => a.name.localeCompare(b.name)) }));
+}
+
 function parseCapture(raw, ts = []) {
   const t = String(raw || "").trim();
   if (!t) return null;
   const entry = matchTracker(t, ts);
   if (entry) return entry;
+  const q = t.match(/^\?\s*(.+)$/);
+  if (q) return { kind: "question", text: q[1].trim(), title: q[1].trim() };
   const m = t.match(/^(?:todo\b[:\s]*|\[\s?\]\s*|-\s*\[\s?\]\s*)(.+)$/i);
   if (m) { const text = m[1].trim(); return { kind: "task", text, title: text }; }
   const title = safeTitle(t.replace(/[.,!?;:]/g, " ")).split(" ").slice(0, 5).join(" ");
@@ -335,7 +370,9 @@ function model(notes, now, state = {}) {
     steps: nextSteps(notes, now, state),
     review,
     todos: weekTodos(review),
-    calendar: calendar(now, new Set(notes.filter(n => n.folder === "Daily").map(n => n.name))),
+    calendar: calendar(now, new Set(trackers(notes).flatMap(x => x.entries.filter(e => x.kind === "number" || e.done).map(e => e.date)))),
+    goals: goals(notes),
+    research: researchBoard(notes),
     ...(() => {
       const ts = trackers(notes);
       const hs = ts.filter(x => x.kind === "habit");
@@ -355,7 +392,7 @@ function model(notes, now, state = {}) {
 module.exports = {
   dayKey, isoWeek, header, catsOf, topicsOf, inbox, createdKey, wordCount, stripMarkdown, excerpt,
   firstOpenTask, weekTodos, currentReview, rhythm, agoText, pastYou, nextSteps, parseCapture, safeTitle,
-  calendar, model, startOfIsoWeek, parseEntries, tracker, trackers, streak, lastDays, heatmap, series, matchTracker,
+  calendar, model, startOfIsoWeek, parseEntries, tracker, trackers, streak, lastDays, heatmap, series, matchTracker, goals, researchBoard, nextStage, STAGES,
 };
 
  return module.exports; })();
@@ -466,17 +503,17 @@ function nextBest(m, actions, ui) {
       el("div", "lh-best-text", [
         el("div", "lh-kicker", [], { text: "Next best step" }),
         el("div", "lh-best-title", [], { text: s ? s.title : "Nothing waiting. Enjoy the quiet." }),
-        el("div", "lh-best-sub", [], { text: s ? s.sub : "Capture a thought above, or write in today's note." }),
+        el("div", "lh-best-sub", [], { text: s ? s.sub : "Log something above, or ask a research question with ?" }),
       ]),
       el("div", "lh-best-actions", s ? [
         btn(s.action, "is-dark", () => actions.step(s)),
         steps.length > 1 ? btn("Something else", "is-link", other) : null,
-      ] : [btn("Open today", "is-dark", actions.openDaily)]),
+      ] : [btn("Check in", "is-dark", actions.checkIn)]),
     ]),
     el("div", "lh-under", [
       el("button", "lh-under-link", [], { type: "button", text: "Revisit a random note", onclick: actions.randomNote }),
       el("span", "lh-dot", [], { text: "·" }),
-      el("button", "lh-under-link", [], { type: "button", text: "Close the day", onclick: actions.openDaily }),
+      el("button", "lh-under-link", [], { type: "button", text: "Check in", onclick: actions.checkIn }),
     ]),
   ]);
 }
@@ -547,9 +584,9 @@ function weekCard(m, actions, ui) {
 function calendarCard(m, actions, ui) {
   const c = m.calendar;
   const head = ["M", "T", "W", "T", "F", "S", "S"].map(d => el("div", "lh-cal-dow", [], { text: d }));
-  const cells = c.weeks.flat().map(d => el("button", `lh-cal-day${d.inMonth ? "" : " is-out"}${d.today ? " is-today" : ""}${d.hasNote ? " has-note" : ""}`,
-    [el("span", "", [], { text: String(d.day) })], { type: "button", title: d.key, onclick: () => actions.openDay(d.key) }));
-  return section("cal", ui, "plain", "calendar", "Calendar", c.label, [el("div", "lh-cal", head.concat(cells))]);
+  const cells = c.weeks.flat().map(d => el("div", `lh-cal-day${d.inMonth ? "" : " is-out"}${d.today ? " is-today" : ""}${d.hasNote ? " has-note" : ""}`,
+    [el("span", "", [], { text: String(d.day) })], { title: `${d.key}${d.hasNote ? ": logged" : ""}` }));
+  return section("cal", ui, "plain", "calendar", "Calendar", `${c.label} · dots = days you logged`, [el("div", "lh-cal", head.concat(cells))]);
 }
 
 const DOW = ["S", "M", "T", "W", "T", "F", "S"];
@@ -631,16 +668,58 @@ function numbersCard(m, actions, ui) {
   return section("numbers", ui, "blue", "chart", "Numbers", "last 90 days", [el("div", "lh-nums", tiles)]);
 }
 
+function goalsCard(m, actions, ui) {
+  const gs = m.goals || [];
+  const rows = gs.map(g => el("div", "lh-goal", [
+    el("div", `lh-tile is-small ${g.kind === "goal" ? "tone-green" : "tone-blue"}`, [icon(g.kind === "goal" ? "target" : "box")]),
+    el("div", "lh-goal-text", [
+      el("div", "lh-goal-top", [
+        el("button", "lh-habit-name", [], { type: "button", text: g.name, onclick: () => actions.open(g.note) }),
+        g.status !== "active" ? el("span", "lh-chip tone-plain", [], { text: g.status }) : null,
+        el("span", "lh-grow"),
+        el("span", "lh-goal-pct", [], { text: `${g.progress}%` }),
+      ]),
+      el("div", "lh-bar-track", [el("div", "lh-bar-fill", [], { style: `width:${g.progress}%` })], { role: "progressbar", "aria-valuenow": String(g.progress), "aria-valuemin": "0", "aria-valuemax": "100", "aria-label": `${g.name} progress` }),
+      el("div", "lh-step-sub", [], { text: [g.next ? `Next: ${g.next}` : "No next step yet", g.topic].filter(Boolean).join(" · ") }),
+    ]),
+    el("div", "lh-goal-actions", [
+      btn("−", "is-outline is-icon", () => actions.bumpProgress(g, -10), null, `Less progress on ${g.name}`),
+      btn("+", "is-outline is-icon", () => actions.bumpProgress(g, 10), null, `More progress on ${g.name}`),
+    ]),
+  ]));
+  return section("goals", ui, "sand", "target", "Goals & projects", gs.length ? `${gs.filter(g => g.status === "active").length} active` : "none yet", [
+    rows.length ? el("div", "lh-goals", rows) : el("div", "lh-empty", [], { text: "Make a goal or project from a template (Alt+T). Progress comes from its checkboxes, or set a progress number." }),
+    el("div", "lh-sec-foot", [btn("New goal", "is-outline", () => actions.newGoal("goal"), "target"), btn("New project", "is-outline", () => actions.newGoal("project"), "box")]),
+  ]);
+}
+
+function researchCard(m, actions, ui) {
+  const cols = m.research || [];
+  const total = cols.reduce((s, c) => s + c.items.length, 0);
+  const NEXT = { question: "Find a source", "to-read": "Start reading", reading: "Mark done" };
+  const board = el("div", "lh-board", cols.map(c => el("div", `lh-col-stage stage-${c.id}`, [
+    el("div", "lh-col-head", [el("span", "lh-sec-label", [], { text: c.label }), el("span", "lh-muted", [], { text: String(c.items.length) })]),
+    ...c.items.map(i => el("div", "lh-rcard", [
+      el("button", "lh-rcard-title", [], { type: "button", text: i.name, onclick: () => actions.open(i.note) }),
+      i.conclusion ? el("div", "lh-rcard-conc", [], { text: i.conclusion }) : null,
+      i.topic || i.source ? el("div", "lh-step-sub", [], { text: [i.topic, i.source ? "has source" : ""].filter(Boolean).join(" · ") }) : null,
+      NEXT[i.stage] ? el("button", "lh-under-link lh-rcard-move", [], { type: "button", text: `${NEXT[i.stage]} →`, onclick: () => actions.moveStage(i) }) : null,
+    ])),
+    c.items.length ? null : el("div", "lh-col-empty", [], { text: c.id === "question" ? "Type ? and a question in the capture box" : "–" }),
+  ])));
+  return section("research", ui, "rose", "sparkle", "Research", total ? `${total} item${total === 1 ? "" : "s"}` : "start with a question", [board]);
+}
+
 function render(root, m, actions, ui = {}, core) {
   root.replaceChildren();
   root.classList.add("lh");
   const bar = el("div", "lh-bar", [
-    btn("Journal", "is-outline", actions.openDaily, "journal"),
     btn("Weekly review", "is-outline", actions.openReview, "review"),
     btn("Search", "is-outline", actions.search, "search"),
     btn("Log something", "is-outline", actions.log, "plus"),
     btn("New note", "is-outline", actions.newNote, "plus"),
     btn("New tracker", "is-outline", actions.newTracker, "flame"),
+    btn("Research question", "is-outline", actions.newQuestion, "sparkle"),
     btn("Letter to future me", "is-outline", () => actions.letter(null), "mail"),
   ]);
   root.append(
@@ -654,6 +733,8 @@ function render(root, m, actions, ui = {}, core) {
     el("div", "lh-grid-a", [nextBest(m, actions, ui), rhythmCard(m, actions)]),
     habitsCard(m, actions, ui),
     numbersCard(m, actions, ui),
+    goalsCard(m, actions, ui),
+    researchCard(m, actions, ui),
     pastCard(m, actions, ui) || "",
     stepsCard(m, actions, ui),
     el("div", "lh-grid-b", [weekCard(m, actions, ui), calendarCard(m, actions, ui)]),
@@ -787,6 +868,31 @@ module.exports = class LyricHome extends Plugin {
     }).open();
   }
 
+  // ---- research & goals ----
+  async createQuestion(text) {
+    const q = String(text || "").trim().replace(/^\?\s*/, "");
+    if (!q) return;
+    const now = new Date();
+    const fm = `---\ncategories:\n  - "[[Research]]"\nstage: question\ncreated: ${core.dayKey(now)}\nsource:\nconclusion:\ntopics: []\n---\n`;
+    const f = await this.create(`${core.safeTitle(q).slice(0, 80) || "Question"}.md`, `${fm}## Question\n${q}\n\n## Sources\n\n## What I found\n`);
+    new Notice(`Research question: ${f.basename}`);
+  }
+  async moveStage(item) {
+    const next = core.nextStage(item.stage);
+    if (!next) return;
+    await this.setProp(item, "stage", next);
+    if (next === "done") new Notice("Done. Write the answer in its conclusion property.");
+  }
+  async bumpProgress(g, d) { await this.setProp(g, "progress", Math.max(0, Math.min(100, (g.progress || 0) + d))); }
+  newGoal(kind) {
+    new TextModal(this.app, kind === "goal" ? "New goal" : "New project", "", async name => {
+      name = core.safeTitle(name.trim().split("\n")[0]);
+      if (!name) return;
+      const f = await this.create(`${name}.md`, await this.template(kind === "goal" ? "Goal Template" : "Project Template", name));
+      this.openFile(f);
+    }).open();
+  }
+
   // ---- actions ----
   async capture(text) {
     const ts = core.trackers(await this.collect());
@@ -799,6 +905,7 @@ module.exports = class LyricHome extends Plugin {
       return;
     }
     if (c.kind === "task") return this.addTodo(c.text);
+    if (c.kind === "question") return this.createQuestion(c.text);
     const now = new Date();
     const tpl = await this.template("Journal Template", c.title, now);
     const body = (tpl.trim() ? tpl.replace(/\s*$/, "\n") : `---\ncategories:\n  - "[[Journal]]"\ncreated: ${core.dayKey(now)}\n---\n`) + c.text + "\n";
@@ -877,6 +984,11 @@ module.exports = class LyricHome extends Plugin {
       toggleHabit: h => this.toggleHabit(h),
       logNumber: (tr, v) => this.logNumber(tr, v),
       newTracker: () => this.newTracker(),
+      newQuestion: () => new TextModal(this.app, "A research question", "", v => this.createQuestion(v)).open(),
+      moveStage: i => this.moveStage(i),
+      bumpProgress: (g, d) => this.bumpProgress(g, d),
+      newGoal: k => this.newGoal(k),
+      checkIn: () => { const el = block.containerEl.querySelector(".lh-habits"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); },
       step: async s => {
         if (s.kind === "inbox") return this.sortInbox();
         if (s.kind === "checkin") { const el = block.containerEl.querySelector(".lh-habits"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); return; }

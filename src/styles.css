@@ -161,8 +161,7 @@
 
 .lh-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; text-align: center; }
 .lh-cal-dow { color: var(--lh-muted); font-size: 11px; padding-bottom: 4px; }
-.lh .lh-cal-day { position: relative; height: 30px; border: 0; border-radius: 7px; background: none; cursor: pointer; font-size: 12.5px; padding: 0; box-shadow: none; }
-.lh .lh-cal-day:hover { background: var(--lh-paper); }
+.lh .lh-cal-day { position: relative; height: 30px; border: 0; border-radius: 7px; background: none; display: grid; place-items: center; font-size: 12.5px; padding: 0; box-shadow: none; }
 .lh-cal-day.is-out { color: var(--lh-muted); opacity: .5; }
 .lh .lh-cal-day.is-today { background: var(--lh-dark); color: var(--lh-dark-ink); font-weight: 650; }
 .lh-cal-day.has-note::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--lh-gold); }
@@ -221,6 +220,36 @@
 .lh .lh-log { width: 100%; height: 32px; border: 1px dashed var(--lh-line); border-radius: 7px; background: transparent; padding: 0 10px; font-size: 13px; outline: 0; box-shadow: none; }
 .lh .lh-log:focus { border-style: solid; border-color: var(--lh-ink-2); }
 
+/* goals */
+.lh-goals { display: flex; flex-direction: column; }
+.lh-goal { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--lh-line); }
+.lh-goal:first-child { padding-top: 0; }
+.lh-goal-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.lh-goal-top { display: flex; align-items: center; gap: 8px; }
+.lh-goal-pct { font-family: var(--lh-serif); font-size: 17px; }
+.lh-bar-track { height: 6px; border-radius: 6px; background: var(--lh-line); overflow: hidden; }
+.lh-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--lh-gold), var(--lh-green)); }
+.lh-goal-actions { display: flex; gap: 4px; }
+.lh .lh-btn.is-icon { width: 30px; padding: 0; font-size: 16px; }
+.lh-chip.tone-plain { background: var(--lh-paper); color: var(--lh-muted); border: 1px solid var(--lh-line); }
+.lh-sec-foot { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* research board */
+.lh-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.lh-col-stage { background: var(--lh-paper); border: 1px solid var(--lh-line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lh-col-head { display: flex; align-items: center; gap: 6px; }
+.lh-col-head::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--lh-muted); }
+.stage-question .lh-col-head::before { background: var(--lh-rose); }
+.stage-to-read .lh-col-head::before { background: var(--lh-gold); }
+.stage-reading .lh-col-head::before { background: var(--lh-blue); }
+.stage-done .lh-col-head::before { background: var(--lh-green); }
+.lh-rcard { background: var(--lh-card); border: 1px solid var(--lh-line); border-radius: 8px; padding: 9px 10px; display: flex; flex-direction: column; gap: 4px; }
+.lh .lh-rcard-title { border: 0; background: none; padding: 0; height: auto; box-shadow: none; text-align: left; cursor: pointer; font-weight: 600; font-size: 13px; line-height: 1.35; white-space: normal; }
+.lh .lh-rcard-title:hover { text-decoration: underline; text-underline-offset: 3px; }
+.lh-rcard-conc { font-family: var(--lh-serif); font-style: italic; font-size: 13.5px; color: var(--lh-ink-2); }
+.lh .lh-rcard-move { align-self: flex-start; font-size: 12px; }
+.lh-col-empty { color: var(--lh-muted); font-size: 12px; padding: 4px 2px; }
+
 /* Obsidian: give the Home note room and hide its chrome */
 .lh-home .markdown-preview-sizer, .lh-home .cm-sizer, .lh-home .markdown-source-view.mod-cm6 .cm-contentContainer > .cm-content { max-width: 1160px !important; }
 .lh-home .inline-title, .lh-home .metadata-container, .lh-home .embedded-backlinks, .lh-home .mod-header .frontmatter-container { display: none !important; }
@@ -236,6 +265,7 @@
   .lh-capture { flex-basis: 100%; }
   .lh-step-actions { width: 100%; padding-left: 46px; }
   .lh-sec-right { display: none; }
+  .lh-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lh-week { width: 100%; padding-left: 46px; justify-content: space-between; }
   .lh-day { width: auto; }
   .lh-sec-head > .lh-under-link { white-space: nowrap; }

@@ -122,6 +122,31 @@ module.exports = class LyricHome extends Plugin {
     }).open();
   }
 
+  // ---- research & goals ----
+  async createQuestion(text) {
+    const q = String(text || "").trim().replace(/^\?\s*/, "");
+    if (!q) return;
+    const now = new Date();
+    const fm = `---\ncategories:\n  - "[[Research]]"\nstage: question\ncreated: ${core.dayKey(now)}\nsource:\nconclusion:\ntopics: []\n---\n`;
+    const f = await this.create(`${core.safeTitle(q).slice(0, 80) || "Question"}.md`, `${fm}## Question\n${q}\n\n## Sources\n\n## What I found\n`);
+    new Notice(`Research question: ${f.basename}`);
+  }
+  async moveStage(item) {
+    const next = core.nextStage(item.stage);
+    if (!next) return;
+    await this.setProp(item, "stage", next);
+    if (next === "done") new Notice("Done. Write the answer in its conclusion property.");
+  }
+  async bumpProgress(g, d) { await this.setProp(g, "progress", Math.max(0, Math.min(100, (g.progress || 0) + d))); }
+  newGoal(kind) {
+    new TextModal(this.app, kind === "goal" ? "New goal" : "New project", "", async name => {
+      name = core.safeTitle(name.trim().split("\n")[0]);
+      if (!name) return;
+      const f = await this.create(`${name}.md`, await this.template(kind === "goal" ? "Goal Template" : "Project Template", name));
+      this.openFile(f);
+    }).open();
+  }
+
   // ---- actions ----
   async capture(text) {
     const ts = core.trackers(await this.collect());
@@ -134,6 +159,7 @@ module.exports = class LyricHome extends Plugin {
       return;
     }
     if (c.kind === "task") return this.addTodo(c.text);
+    if (c.kind === "question") return this.createQuestion(c.text);
     const now = new Date();
     const tpl = await this.template("Journal Template", c.title, now);
     const body = (tpl.trim() ? tpl.replace(/\s*$/, "\n") : `---\ncategories:\n  - "[[Journal]]"\ncreated: ${core.dayKey(now)}\n---\n`) + c.text + "\n";
@@ -212,6 +238,11 @@ module.exports = class LyricHome extends Plugin {
       toggleHabit: h => this.toggleHabit(h),
       logNumber: (tr, v) => this.logNumber(tr, v),
       newTracker: () => this.newTracker(),
+      newQuestion: () => new TextModal(this.app, "A research question", "", v => this.createQuestion(v)).open(),
+      moveStage: i => this.moveStage(i),
+      bumpProgress: (g, d) => this.bumpProgress(g, d),
+      newGoal: k => this.newGoal(k),
+      checkIn: () => { const el = block.containerEl.querySelector(".lh-habits"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); },
       step: async s => {
         if (s.kind === "inbox") return this.sortInbox();
         if (s.kind === "checkin") { const el = block.containerEl.querySelector(".lh-habits"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); return; }

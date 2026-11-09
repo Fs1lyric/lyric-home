@@ -291,11 +291,46 @@ function nextSteps(notes, now, state = {}) {
   return out.filter(s => !hidden(s.id, state, today));
 }
 
+// ---- goals & research ----
+function goals(notes) {
+  const order = { active: 0, idea: 1, paused: 2 };
+  return notes
+    .filter(n => (hasCat(n, "Goals") || hasCat(n, "Projects")) && !/^Templates(\/|$)/.test(n.folder))
+    .map(n => {
+      const status = String((n.fm && n.fm.status) || "active").toLowerCase();
+      const boxes = String(n.body || "").split("\n").map(l => l.match(TASK)).filter(m => m && m[2].trim());
+      const p = Number(n.fm && n.fm.progress);
+      const progress = Number.isFinite(p) && n.fm.progress !== "" && n.fm.progress !== null
+        ? Math.max(0, Math.min(100, Math.round(p)))
+        : boxes.length ? Math.round(100 * boxes.filter(m => m[1] !== " ").length / boxes.length) : 0;
+      const nt = firstOpenTask(n.body);
+      return { name: n.name, path: n.path, note: n, kind: hasCat(n, "Goals") ? "goal" : "project", status, progress,
+        next: nt ? nt.text : "", topic: topicsOf(n)[0] || "", mtime: n.mtime };
+    })
+    .filter(g => !["done", "dropped"].includes(g.status))
+    .sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3) || a.name.localeCompare(b.name));
+}
+const STAGES = [["question", "Questions"], ["to-read", "To read"], ["reading", "Reading"], ["done", "Done"]];
+function nextStage(s) { const i = STAGES.findIndex(x => x[0] === s); return i >= 0 && i < STAGES.length - 1 ? STAGES[i + 1][0] : null; }
+function researchBoard(notes) {
+  const items = notes
+    .filter(n => hasCat(n, "Research") && !/^(Templates|Wiki|Raw)(\/|$)/.test(n.folder))
+    .map(n => {
+      const s = String((n.fm && n.fm.stage) || "question").toLowerCase();
+      return { name: n.name, path: n.path, note: n, stage: STAGES.some(x => x[0] === s) ? s : "question",
+        source: n.fm && n.fm.source ? String(n.fm.source) : "", conclusion: n.fm && n.fm.conclusion ? String(n.fm.conclusion) : "",
+        topic: topicsOf(n)[0] || "" };
+    });
+  return STAGES.map(([id, label]) => ({ id, label, items: items.filter(i => i.stage === id).sort((a, b) => a.name.localeCompare(b.name)) }));
+}
+
 function parseCapture(raw, ts = []) {
   const t = String(raw || "").trim();
   if (!t) return null;
   const entry = matchTracker(t, ts);
   if (entry) return entry;
+  const q = t.match(/^\?\s*(.+)$/);
+  if (q) return { kind: "question", text: q[1].trim(), title: q[1].trim() };
   const m = t.match(/^(?:todo\b[:\s]*|\[\s?\]\s*|-\s*\[\s?\]\s*)(.+)$/i);
   if (m) { const text = m[1].trim(); return { kind: "task", text, title: text }; }
   const title = safeTitle(t.replace(/[.,!?;:]/g, " ")).split(" ").slice(0, 5).join(" ");
@@ -332,7 +367,9 @@ function model(notes, now, state = {}) {
     steps: nextSteps(notes, now, state),
     review,
     todos: weekTodos(review),
-    calendar: calendar(now, new Set(notes.filter(n => n.folder === "Daily").map(n => n.name))),
+    calendar: calendar(now, new Set(trackers(notes).flatMap(x => x.entries.filter(e => x.kind === "number" || e.done).map(e => e.date)))),
+    goals: goals(notes),
+    research: researchBoard(notes),
     ...(() => {
       const ts = trackers(notes);
       const hs = ts.filter(x => x.kind === "habit");
@@ -352,5 +389,5 @@ function model(notes, now, state = {}) {
 module.exports = {
   dayKey, isoWeek, header, catsOf, topicsOf, inbox, createdKey, wordCount, stripMarkdown, excerpt,
   firstOpenTask, weekTodos, currentReview, rhythm, agoText, pastYou, nextSteps, parseCapture, safeTitle,
-  calendar, model, startOfIsoWeek, parseEntries, tracker, trackers, streak, lastDays, heatmap, series, matchTracker,
+  calendar, model, startOfIsoWeek, parseEntries, tracker, trackers, streak, lastDays, heatmap, series, matchTracker, goals, researchBoard, nextStage, STAGES,
 };

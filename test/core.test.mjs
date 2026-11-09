@@ -257,3 +257,49 @@ test("nextSteps: a check-in step lists habits not done today", () => {
   assert.equal(c.title, "2 habits left today");
   assert.equal(c.sub, "Painting · Reading");
 });
+
+// ---- goals & research ----
+test("goals: active goals/projects with progress from the property or the checkboxes", () => {
+  const ns = [
+    note("Black belt.md", { categories: ["[[Goals]]"], status: "active", progress: 40, topics: ["[[Karate]]"] }, "- [ ] Kata twice"),
+    note("Site.md", { categories: ["[[Projects]]"], status: "active" }, "- [x] font\n- [x] colours\n- [ ] about\n- [ ] deploy"),
+    note("Idea.md", { categories: ["[[Projects]]"], status: "idea" }, ""),
+    note("Old.md", { categories: ["[[Goals]]"], status: "done" }, "- [x] a"),
+  ];
+  const g = core.goals(ns);
+  assert.deepEqual(g.map(x => [x.name, x.progress, x.status]), [["Black belt", 40, "active"], ["Site", 50, "active"], ["Idea", 0, "idea"]]);
+  assert.equal(g[0].next, "Kata twice");
+  assert.equal(g[0].topic, "Karate");
+  assert.equal(g[1].next, "about");
+});
+
+test("researchBoard: research notes in four columns by stage", () => {
+  const ns = [
+    note("Why do openings matter.md", { categories: ["[[Research]]"], stage: "question" }),
+    note("Kata history book.md", { categories: ["[[Research]]"], stage: "to-read", source: "https://x" }),
+    note("Colour theory.md", { categories: ["[[Research]]"], stage: "reading" }),
+    note("Spaced repetition.md", { categories: ["[[Research]]"], stage: "done", conclusion: "Works if reviews are short." }),
+    note("No stage.md", { categories: ["[[Research]]"] }),
+    note("Wiki/Summary.md", { categories: ["[[Research]]"], stage: "done" }),
+  ];
+  const b = core.researchBoard(ns);
+  assert.deepEqual(b.map(c => [c.id, c.items.map(i => i.name)]), [
+    ["question", ["No stage", "Why do openings matter"]], ["to-read", ["Kata history book"]],
+    ["reading", ["Colour theory"]], ["done", ["Spaced repetition"]],
+  ]);
+  assert.equal(b[3].items[0].conclusion, "Works if reviews are short.");
+  assert.equal(core.nextStage("question"), "to-read");
+  assert.equal(core.nextStage("done"), null);
+});
+
+test("parseCapture: '? text' is a research question", () => {
+  assert.deepEqual(core.parseCapture("? why do endgames feel slow"), { kind: "question", text: "why do endgames feel slow", title: "why do endgames feel slow" });
+  assert.equal(core.parseCapture("?").kind, "thought");
+});
+
+test("model: calendar dots mark days with any tracker entry", () => {
+  const m = core.model([habit("Kata", "- 2026-11-03: yes\n- 2026-11-04: no"), num("Blitz", "- 2026-11-05: 900")], NOW, {});
+  const cells = m.calendar.weeks.flat();
+  assert.deepEqual(cells.filter(c => c.hasNote).map(c => c.key), ["2026-11-03", "2026-11-05"]);
+  assert.ok(Array.isArray(m.goals) && Array.isArray(m.research));
+});
