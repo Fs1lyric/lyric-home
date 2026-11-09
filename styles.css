@@ -124,9 +124,9 @@
 .lh-sec-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--lh-line); }
 .lh-sec.is-closed .lh-sec-head { border-bottom: 0; }
 .lh-sec-icon { width: 15px; height: 15px; }
-.lh-sec-label { font-weight: 650; font-size: 13px; }
-.lh-sec-meta { color: var(--lh-muted); font-size: 12.5px; }
-.lh-sec-right { color: var(--lh-ink-2); font-size: 12.5px; }
+.lh-sec-label { font-weight: 650; font-size: 13px; white-space: nowrap; }
+.lh-sec-meta { color: var(--lh-muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.lh-sec-right { color: var(--lh-ink-2); font-size: 12.5px; white-space: nowrap; }
 .lh .lh-chev { border: 0; background: none; padding: 2px; height: auto; cursor: pointer; color: var(--lh-muted); box-shadow: none; display: grid; }
 .lh-sec.is-closed .lh-chev .lh-icon { transform: rotate(-90deg); }
 .tone-sand .lh-sec-head { background: var(--lh-sand-bg); color: var(--lh-sand-ink); }
@@ -177,6 +177,8 @@
   .lh-grid-a, .lh-grid-b { grid-template-columns: minmax(0, 1fr); }
   .lh-capture { flex-basis: 100%; }
   .lh-step-actions { width: 100%; padding-left: 46px; }
+  .lh-sec-right { display: none; }
+  .lh-sec-head > .lh-under-link { white-space: nowrap; }
 }
 
 /* modals (sort, letter, log) */
