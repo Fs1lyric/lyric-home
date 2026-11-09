@@ -463,6 +463,8 @@ function render(root, m, actions, ui = {}, core) {
       capture(actions, core),
     ]),
     bar,
+    m.topics && m.topics.length ? el("nav", "lh-areas", [el("span", "lh-areas-label", [], { text: "Areas" })].concat(
+      m.topics.map(tp => el("button", "lh-area", [], { type: "button", text: tp, onclick: () => actions.openPath(`Topics/${tp}.md`) })))) : "",
     el("div", "lh-grid-a", [nextBest(m, actions, ui), rhythmCard(m, actions)]),
     pastCard(m, actions, ui) || "",
     stepsCard(m, actions, ui),
