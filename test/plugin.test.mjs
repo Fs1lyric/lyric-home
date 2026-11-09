@@ -11,7 +11,7 @@ class MarkdownRenderChild { constructor(el) { this.containerEl = el; } }
 const obsidian = { Plugin, Modal, Notice, MarkdownRenderChild, normalizePath: p => p.replace(/\/+/g, "/").replace(/^\//, "") };
 const origLoad = Module._load;
 Module._load = function (req, ...rest) { return req === "obsidian" ? obsidian : origLoad.call(this, req, ...rest); };
-globalThis.window = globalThis;
+globalThis.window = { setInterval: () => 0 }; // the plugin's refresh timer must not keep node alive
 const LyricHome = createRequire(import.meta.url)("../main.js");
 
 const WEEKLY = `---

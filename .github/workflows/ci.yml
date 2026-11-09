@@ -9,7 +9,8 @@ jobs:
         with:
           node-version: 22
       - name: Unit tests
-        run: node --test test/*.test.mjs
+        run: node --test --test-timeout=30000 test/*.test.mjs
+        timeout-minutes: 3
       - name: Build is up to date
         run: node scripts/build.mjs && git diff --exit-code main.js styles.css theme/paper.css
       - name: Screenshots
