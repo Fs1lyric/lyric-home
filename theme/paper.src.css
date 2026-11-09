@@ -107,3 +107,24 @@ button.mod-cta { border-radius: 7px; font-weight: 600; }
 }
 .bases-view .bases-cards-item:hover .bases-cards-cover { transform: translateY(-3px) rotate(-.6deg); box-shadow: inset 6px 0 6px -4px rgba(0, 0, 0, .35), 0 16px 24px -10px rgba(40, 30, 10, .5); }
 .bases-view .bases-cards-property.mod-title { font-family: var(--lh-serif); font-size: 1.02em; padding-top: 8px; }
+
+/* graph view: readable dots, links and labels */
+.theme-dark .graph-view.color-fill { color: #cfc9bc; }
+.theme-dark .graph-view.color-fill-focused { color: #f1ede4; }
+.theme-dark .graph-view.color-fill-highlight { color: #d8b46a; }
+.theme-dark .graph-view.color-fill-tag { color: #87c99b; }
+.theme-dark .graph-view.color-fill-attachment { color: #9db5e0; }
+.theme-dark .graph-view.color-fill-unresolved { color: #6d685e; }
+.theme-dark .graph-view.color-line { color: #4a463e; }
+.theme-dark .graph-view.color-line-highlight { color: #d8b46a; }
+.theme-dark .graph-view.color-circle { color: #d8b46a; }
+.theme-dark .graph-view.color-text { color: #f1ede4; }
+.theme-dark .graph-view.color-arrow { color: #7a7468; }
+.theme-light .graph-view.color-fill { color: #6d685e; }
+.theme-light .graph-view.color-fill-focused { color: #1d1b17; }
+.theme-light .graph-view.color-fill-highlight { color: #8a6a22; }
+.theme-light .graph-view.color-fill-tag { color: #3d8a56; }
+.theme-light .graph-view.color-fill-unresolved { color: #b3ac9d; }
+.theme-light .graph-view.color-line { color: #d6cfbf; }
+.theme-light .graph-view.color-line-highlight { color: #8a6a22; }
+.theme-light .graph-view.color-text { color: #1d1b17; }
